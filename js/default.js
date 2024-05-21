@@ -21683,65 +21683,74 @@ var googlefonts = {
       k = {};
     jQuery.extend(k, j);
 
-    chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-        if (tabs && tabs.length > 0) {
-          i = tabs[0];
-      
-          l = function () {
-            chrome.storage.local.get("styles", function (a) {
-              a = a || {};
-              a.styles = a.styles || {};
-              a.styles.domain_styles = a.styles.domain_styles || {};
-              a.styles.global_style = a.styles.global_style || {};
-      
-              if (i && i.url) {
-                var b = i.url.match(/:\/\/(.[^\/]+)/)[1];
-                if ("custom" === j.type) {
-                  a.styles.domain_styles[b] = j;
-                } else {
-                  delete a.styles.domain_styles[b];
-                }
-                a.styles.global_style = k;
-                chrome.storage.local.set(a);
+    chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+      if (request.msg === "style") {
+        console.log("Received message:", request.value);
+        sendResponse({status: "success"});
+      }
+    });
+
+    chrome.runtime.sendMessage({msg: "getActiveTab"}, function(response) {
+      if (chrome.runtime.lastError) {
+        console.error(chrome.runtime.lastError.message);
+      } else {
+        console.log("Active tab:", response.tab);
+    
+        i = response.tab;
+    
+        l = function () {
+          chrome.storage.local.get("styles", function (a) {
+            a = a || {};
+            a.styles = a.styles || {};
+            a.styles.domain_styles = a.styles.domain_styles || {};
+            a.styles.global_style = a.styles.global_style || {};
+    
+            if (i && i.url) {
+              var b = i.url.match(/:\/\/(.[^\/]+)/)[1];
+              if ("custom" === j.type) {
+                a.styles.domain_styles[b] = j;
               } else {
-                console.error("Tab or URL is undefined.");
+                delete a.styles.domain_styles[b];
               }
-            });
-          };
-      
-          m = function () {
-            chrome.storage.local.get("styles", function (a) {
-              if (i && i.url) {
-                var b = i.url.match(/:\/\/(.[^\/]+)/)[1];
-                if (a && a.styles) {
-                  if (a.styles.domain_styles && a.styles.domain_styles[b]) {
-                    j = a.styles.domain_styles[b];
-                  }
-                  if (a.styles.global_style) {
-                    k = a.styles.global_style;
-                  }
+              a.styles.global_style = k;
+              chrome.storage.local.set(a);
+            } else {
+              console.error("Tab or URL is undefined.");
+            }
+          });
+        };
+    
+        m = function () {
+          chrome.storage.local.get("styles", function (a) {
+            if (i && i.url) {
+              var b = i.url.match(/:\/\/(.[^\/]+)/)[1];
+              if (a && a.styles) {
+                if (a.styles.domain_styles && a.styles.domain_styles[b]) {
+                  j = a.styles.domain_styles[b];
                 }
-                var c = null;
-                if ("global" === j.type) {
-                  c = k;
-                  n(c);
-                } else if ("custom" === j.type) {
-                  c = j;
-                  n(c);
+                if (a.styles.global_style) {
+                  k = a.styles.global_style;
                 }
-                $(".setting-type").val(j.type).trigger("change");
-              } else {
-                console.error("Tab or URL is undefined.");
               }
-            });
-          };
-      
-          l();
-          m();
-        } else {
-          console.error("No active tab found.");
-        }
-      });
+              var c = null;
+              if ("global" === j.type) {
+                c = k;
+                n(c);
+              } else if ("custom" === j.type) {
+                c = j;
+                n(c);
+              }
+              $(".setting-type").val(j.type).trigger("change");
+            } else {
+              console.error("Tab or URL is undefined.");
+            }
+          });
+        };
+    
+        l();
+        m();
+      }
+    });
     (n = function (i) {
       i.font_style
         ? (c.select2("val", i.font_style),
@@ -21899,8 +21908,8 @@ var googlefonts = {
     }),
       e.select2(),
       c.select2(),
-      chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-        var i = tabs[0];
+      chrome.runtime.sendMessage({msg: "getActiveTab"}, function (tabs) { // REMAKE THIS
+        var i = tabs.tab;
         if (i && i.url) {
           var domain = i.url.match(/:\/\/(.[^\/]+)/);
           if (domain && domain[1]) {
@@ -22033,10 +22042,7 @@ var googlefonts = {
       }),
       $(".done").click(function () {
         window.close();
-      }),
-      setTimeout(function () {
-        $("body").width(254).height(549);
-      }, 1e3);
+      });
   }),
   !(function (a) {
     var b = function (a, b) {
