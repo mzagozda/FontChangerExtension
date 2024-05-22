@@ -24,7 +24,7 @@
   },
   "key": "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC5ZYbsr6ep/2ofkCblxZX7M4WhZQ1daYrmHSoiEbvpFvnuqgVBGk3yqwF0xCrqy6kueUAHRY696qJGSKW5Uxudj3e4CmVwZMbQivP7VzpoUlzLTBaKkZgavGuR9GSAzkUvY/xl8JHzt7dIKIq3CUEMGpDAoBfzX4o4a37JA+hfPQIDAQAB",
   "manifest_version": 3,
-  "name": "Google Font Changer",
+  "name": "Font Changer",
   "permissions": [
     "storage",
     "unlimitedStorage",
