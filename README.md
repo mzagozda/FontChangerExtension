@@ -34,5 +34,3 @@ Permission is hereby granted, free of charge, to any person obtaining a copy of 
 ## Contact
 
 Maciej Zagozda – [@mzagozda](https://x.com/mzagozda) – maciej.zagozda@gmail.com
-
-
