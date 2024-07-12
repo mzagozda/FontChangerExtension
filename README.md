@@ -1,33 +1,28 @@
-# Project Name
+# Font Changer
 
-This is my favourite browser extension allowing to choose custom fonts in order to override default fonts of any given website.
+This is my favourite browser extension that allows to choose custom fonts in order to override default fonts of any given website.
 
 ## Installation
 
-Provide detailed step-by-step instructions on how to get a development environment running.
-
+1. Clone the repo
+2. Open Chrome and head to Extensions -> Manage Extensions
+3. Enable Developer Mode
+4. Press "Load unpacked" and select the cloned repo folder
 
 ## Usage
 
-Explain how to use your project. Include screenshots or code examples as necessary.
-
+Click on the extension icon and a popup will appear. On it, you can change the font family, size, style and weight.
+You can also add your own custom font.
 
 ## Features
 
-List the features of your project. This could include:
-
-- Feature 1
-- Feature 2
-- Feature 3
+- Change the font and it's properties on any website
+- Add custom fonts
+- Change the font globally, or set it site specific
 
 ## Contributing
 
-State if you are open to contributions and what your requirements are for accepting them.
-
-For example:
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
-
-Please make sure to update tests as appropriate.
 
 ## License
 
@@ -39,5 +34,3 @@ Permission is hereby granted, free of charge, to any person obtaining a copy of 
 ## Contact
 
 Maciej Zagozda – [@mzagozda](https://x.com/mzagozda) – maciej.zagozda@gmail.com
-
-
