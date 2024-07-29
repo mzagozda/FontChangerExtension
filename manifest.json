@@ -27,15 +27,13 @@
   "permissions": [
     "storage",
     "unlimitedStorage",
-    "notifications",
-    "declarativeNetRequest",
     "tabs",
     "scripting",
     "activeTab"
   ],
   "host_permissions": ["<all_urls>"],
   "update_url": "https://clients2.google.com/service/update2/crx",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "web_accessible_resources": [
     {
       "resources": [
