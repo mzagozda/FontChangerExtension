@@ -5,10 +5,14 @@ var currentStyle = {
   font_size: null,
 };
 
-chrome.storage.local.get(["styles", "profiles"], function (a) {
-  var b = t(a);
-  b && ((currentStyle = b), updateStyle(currentStyle));
-});
+function u() {
+  chrome.storage.local.get(["styles", "profiles"], function (a) {
+    var b = t(a);
+    b && ((currentStyle = b), updateStyle(currentStyle));
+  });
+}
+
+u();
 
 var style = document.createElement("style");
 style.type = "text/css";
@@ -16,18 +20,25 @@ var wf = document.createElement("link");
 
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
   if (message.msg === "style") {
-    chrome.storage.local.get("profiles", function (a) {
-      var b = s(a && a.profiles, document.location.host);
-      if (b && b.style) {
-        currentStyle = b.style;
-        updateStyle(b.style);
-      } else if (message.value) {
-        currentStyle = message.value;
-        updateStyle(message.value);
-      }
+    if (message.value) {
+      currentStyle = message.value;
+      updateStyle(message.value);
       sendResponse();
-    });
+      return;
+    }
+    u();
+    sendResponse();
     return !0;
+  }
+});
+
+chrome.storage.onChanged.addListener(function (changes, areaName) {
+  if (
+    areaName === "local" &&
+    (Object.prototype.hasOwnProperty.call(changes, "profiles") ||
+      Object.prototype.hasOwnProperty.call(changes, "styles"))
+  ) {
+    u();
   }
 });
 
@@ -44,7 +55,10 @@ function s(a, b) {
 
 function t(a) {
   var b = s(a && a.profiles, document.location.host);
-  if (b && b.style) return b.style;
+  if (b && b.style) {
+    console.log("[FontChanger] Profile applied for:", document.location.host);
+    return b.style;
+  }
   if (
     a &&
     a.styles &&
@@ -77,10 +91,6 @@ var updateStyle = function (a) {
           a[c].name.replace(/\s/g, "+");
         wf.type = "text/css";
         wf.rel = "stylesheet";
-        document.head
-          ? document.head.appendChild(wf)
-          : document.documentElement.appendChild(wf);
-      } else if (a[c].type === "standard") {
         document.head
           ? document.head.appendChild(wf)
           : document.documentElement.appendChild(wf);

@@ -270,8 +270,8 @@ button:active {
 
 #delete-profile {
   align-self: flex-end;
-  border-color: #9a3412;
-  background: #c2410c;
+  border-color: #b91c1c;
+  background: #dc2626;
 }
 
 #delete-font:hover {
@@ -283,9 +283,9 @@ button:active {
 }
 
 #delete-profile:hover {
-  background: #9a3412;
+  background: #b91c1c;
 }
 
 #delete-profile:active {
-  background: #7c2d12;
+  background: #991b1b;
 }

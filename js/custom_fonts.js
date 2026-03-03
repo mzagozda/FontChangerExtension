@@ -99,7 +99,10 @@
             chrome.storage.local.set({ profiles: p }, function () {
               chrome.runtime.lastError
                 ? alert("Unable to save profile. Please try again.")
-                : (m(), o(), r());
+                : (console.log("[FontChanger] Profile saved:", a),
+                  m(),
+                  o(),
+                  r());
             }));
         }),
       h("#delete-profile") &&
@@ -112,6 +115,7 @@
             a.selected && delete p[a.value];
           }),
             chrome.storage.local.set({ profiles: p }, function () {
+              console.log("[FontChanger] Profile(s) deleted");
               m(), r();
             }));
         }));
@@ -259,12 +263,15 @@
       .sort()
       .forEach(function (a) {
         var c = p[a],
-          d =
-            c && c.style && c.style.font_family
-              ? c.style.font_family.name
-              : "-",
-          e = document.createElement("option");
-        ((e.value = a), (e.textContent = a + " → " + d), b.appendChild(e));
+          d = c && c.style ? c.style : {},
+          e = d.font_family && d.font_family.name ? d.font_family.name : "-",
+          f = d.font_weight ? ", w:" + d.font_weight : "",
+          g = d.font_style ? ", s:" + d.font_style : "",
+          i = d.font_size ? ", size:" + d.font_size + "px" : "",
+          j = document.createElement("option");
+        ((j.value = a),
+          (j.textContent = a + " -> " + e + f + g + i),
+          b.appendChild(j));
       });
     ((a.innerHTML = ""), a.appendChild(b));
   }
@@ -294,7 +301,32 @@
                 msg: "style",
                 value: null,
               },
-              function () {},
+              function () {
+                if (chrome.runtime.lastError) {
+                  if (
+                    chrome.scripting &&
+                    a.url &&
+                    /^https?:\/\//.test(a.url)
+                  ) {
+                    chrome.scripting.executeScript(
+                      {
+                        target: { tabId: a.id, allFrames: !0 },
+                        files: ["js/cs.js"],
+                      },
+                      function () {
+                        chrome.tabs.sendMessage(
+                          a.id,
+                          {
+                            msg: "style",
+                            value: null,
+                          },
+                          function () {},
+                        );
+                      },
+                    );
+                  }
+                }
+              },
             );
         });
       });
