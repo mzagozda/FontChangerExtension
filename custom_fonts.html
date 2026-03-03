@@ -2,41 +2,37 @@
 <html>
 <head>
     <title></title>
-    <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="css/custom_fonts.css">
 </head>
 <body>
-<div class="container">
-    <h3>Save New Font</h3>
-    <div class="form-horizontal well">
-        <div class="lead">Select a font file and it will automatically show up in the font list.</div>
-        <div class="control-group">
-            <label class="control-label" for="font-name">Font Name</label>
-            <div class="controls">
-                <input type="text" id="font-name" placeholder="Font Name">
+<main class="page-wrap">
+    <h1>Save New Font</h1>
+    <section class="panel">
+        <p class="lead">Select a font file and it will automatically show up in the font list.</p>
+        <div class="field">
+            <label for="font-name">Font Name</label>
+            <input type="text" id="font-name" placeholder="Font Name">
+        </div>
+        <div class="field">
+            <label for="file">Select Font (.ttf, .otf, .woff)</label>
+            <div id="file-drop-zone" class="drop-zone">
+                <input type="file" id="file" accept=".ttf,.otf,.woff">
+                <div class="drop-zone-text">Drop font file here or <span>browse</span></div>
+                <div id="file-name" class="file-name">No file selected</div>
             </div>
         </div>
-        <div class="control-group">
-            <label class="control-label" for="file">Select Font (.ttf, .otf, .woff)</label>
-            <div class="controls">
-                <input type="file" id="file">
-            </div>
+        <div class="actions">
+            <button id="save-font">Save Font</button>
         </div>
-        <div class="control-group">
-            <div class="controls">
-                <button class="btn btn-primary" id="save-font">Save Font</button>
-            </div>
+    </section>
+    <h2>Saved Fonts</h2>
+    <section class="panel">
+        <div class="saved-row">
+            <select id="saved-fonts" multiple="multiple"></select>
+            <button id="delete-font">Delete</button>
         </div>
-    </div>
-    <h3>Saved Fonts</h3>
-    <div class="form-horizontal">
-        <div class="control-group">
-            <div class="controls">
-                <select id="saved-fonts" multiple="multiple" style="height: 200px;"></select>
-                <button class="btn btn-danger" id="delete-font" style="vertical-align: top;">Delete</button>
-            </div>
-        </div>
-    </div>
-</div>
+    </section>
+</main>
 
     <script src="js/custom_fonts.js"></script>
 </body>

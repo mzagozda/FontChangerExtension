@@ -1,25 +1,41 @@
 !(function () {
     function a() {
-      h("#file").addEventListener("change", function () {
-        var a = this.files[0],
-          b = a.name.match(/\.[a-zA-Z]+$/);
-        (b && ".ttf" === b[0].toLowerCase()) ||
-        ".otf" === b[0].toLowerCase() ||
-        ".woff" === b[0].toLowerCase()
-          ? ((g = b[0]),
-            (f = a),
-            (h("#font-name").value = a.name.substring(0, a.name.indexOf("."))))
-          : ((f = null), alert("Font must be of type .ttf, .otf or .woff"));
+      var a = h("#file"),
+        i = h("#file-drop-zone");
+      a.addEventListener("change", function () {
+        j(this.files && this.files[0] ? this.files[0] : null);
       }),
+        ["dragenter", "dragover"].forEach(function (a) {
+          i.addEventListener(a, function (a) {
+            a.preventDefault(), a.stopPropagation(), i.classList.add("dragover");
+          });
+        }),
+        ["dragleave", "dragend"].forEach(function (a) {
+          i.addEventListener(a, function (a) {
+            a.preventDefault(), a.stopPropagation(), i.classList.remove("dragover");
+          });
+        }),
+        i.addEventListener("drop", function (b) {
+          b.preventDefault(), b.stopPropagation(), this.classList.remove("dragover");
+          var c = b.dataTransfer && b.dataTransfer.files ? b.dataTransfer.files[0] : null;
+          if (!c) return;
+          try {
+            var d = new DataTransfer();
+            d.items.add(c), (a.files = d.files);
+          } catch (a) {}
+          j(c);
+        }),
         h("#save-font").addEventListener("click", function () {
-          var a = h("#font-name").value;
-          return a.trim()
-            ? e[a]
-              ? void alert('File name "' + a + '" is already in use.')
-              : f
-              ? void b(f, a, g)
+          var a = h("#font-name").value.trim(),
+            c = f || (h("#file").files && h("#file").files[0]);
+          if (!a) return void alert("Please type a name.");
+          if (e[a]) return void alert('File name "' + a + '" is already in use.');
+          if (!c) return void alert("Please select a file.");
+          var d = k(c.name);
+          return d
+              ? ((g = d), (f = c), void b(f, a, g))
               : void alert("Please select a file.")
-            : void alert("Please type a name.");
+            ;
         }),
         h("#delete-font").addEventListener("click", function () {
           var a = Array.prototype.slice.call(
@@ -42,9 +58,11 @@
           h = "font/truetype";
         ".woff" === f ? (h = "font/woff") : ".otf" === f && (h = "font/opentype"),
           (e[b] = "data:" + h + ";base64," + g.replace(/data:.*?;base64,/, "")),
-          chrome.storage.local.set({ custom_fonts: e }),
-          c(),
-          d();
+          chrome.storage.local.set({ custom_fonts: e }, function () {
+            chrome.runtime.lastError
+              ? alert("Unable to save font. Please try again.")
+              : (c(), d());
+          });
       }),
         g.readAsDataURL(a, "UTF-8");
     }
@@ -58,7 +76,32 @@
       (b.innerHTML = ""), b.appendChild(a);
     }
     function d() {
-      (h("#font-name").value = ""), (h("#file").value = ""), (f = null);
+      (h("#font-name").value = ""),
+        (h("#file").value = ""),
+        (h("#file-name").textContent = "No file selected"),
+        h("#file-drop-zone").classList.remove("has-file"),
+        (f = null);
+    }
+    function j(a) {
+      if (!a) return;
+      var c = k(a.name),
+        d = !!c;
+      d
+        ? ((g = c),
+          (f = a),
+          (h("#font-name").value = a.name.substring(0, a.name.lastIndexOf("."))),
+          (h("#file-name").textContent = a.name),
+          h("#file-drop-zone").classList.add("has-file"))
+        : ((f = null),
+          (h("#file").value = ""),
+          (h("#file-name").textContent = "No file selected"),
+          h("#file-drop-zone").classList.remove("has-file"),
+          alert("Font must be of type .ttf, .otf or .woff"));
+    }
+    function k(a) {
+      var b = a && a.match(/\.[a-zA-Z0-9]+$/),
+        c = b ? b[0].toLowerCase() : "";
+      return ".ttf" === c || ".otf" === c || ".woff" === c ? c : null;
     }
     var e = {},
       f = null,

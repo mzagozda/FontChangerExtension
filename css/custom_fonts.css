@@ -1,0 +1,168 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: #f6f7fb;
+  color: #111827;
+  font: 14px/1.45 "Segoe UI", Tahoma, Arial, sans-serif;
+}
+
+.page-wrap {
+  max-width: 760px;
+  margin: 24px auto;
+  padding: 0 16px;
+}
+
+h1,
+h2 {
+  margin: 0 0 10px;
+  color: #0f172a;
+}
+
+h1 {
+  font-size: 28px;
+}
+
+h2 {
+  margin-top: 18px;
+  font-size: 22px;
+}
+
+.panel {
+  padding: 14px;
+  border: 1px solid #d8dce5;
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.lead {
+  margin: 0 0 14px;
+  color: #334155;
+}
+
+.field {
+  margin-bottom: 12px;
+}
+
+.field label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+input[type="text"],
+select {
+  width: 100%;
+  border: 1px solid #c4cad6;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #111827;
+  font: inherit;
+}
+
+input[type="text"] {
+  height: 36px;
+  padding: 0 10px;
+}
+
+.drop-zone {
+  position: relative;
+  border: 2px dashed #c4cad6;
+  border-radius: 10px;
+  background: #f8fafc;
+  padding: 14px 12px;
+  text-align: center;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.drop-zone:hover,
+.drop-zone.dragover {
+  border-color: #000000;
+  background: #f1f1f1;
+}
+
+.drop-zone.has-file {
+  border-color: #000000;
+  background: #f1f1f1;
+}
+
+#file {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.drop-zone-text {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.drop-zone-text span {
+  color: #1d4ed8;
+}
+
+.file-name {
+  margin-top: 6px;
+  font-size: 13px;
+  color: #4b5563;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.actions {
+  margin-top: 2px;
+}
+
+button {
+  height: 34px;
+  border: 1px solid #1d4ed8;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #ffffff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0 14px;
+}
+
+button:hover {
+  background: #1d4ed8;
+}
+
+button:active {
+  background: #1e40af;
+}
+
+.saved-row {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: stretch;
+}
+
+#saved-fonts {
+  min-height: 220px;
+}
+
+#delete-font {
+  align-self: flex-end;
+  border-color: #b91c1c;
+  background: #dc2626;
+}
+
+#delete-font:hover {
+  background: #b91c1c;
+}
+
+#delete-font:active {
+  background: #991b1b;
+}

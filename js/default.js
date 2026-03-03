@@ -21979,7 +21979,9 @@ var googlefonts = {
         d.click();
       }),
       $(".enable-text").change(function () {
-        var a = $(this).parent().next("td").children(),
+        var a = $(this).attr("data-target")
+            ? $($(this).attr("data-target"))
+            : $(this).closest(".control-row").find("input[type='text']"),
           b = null;
         (b = "global" === j.type ? k : j),
           $(this).attr("checked")
