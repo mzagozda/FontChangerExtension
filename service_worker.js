@@ -14,19 +14,29 @@ chrome.runtime.onInstalled.addListener(() => {
     if (!result.installed) {
       chrome.tabs.query({}, function (tabs) {
         for (let tab of tabs) {
-          if (!tab.url.startsWith("chrome://") && !tab.url.startsWith("chrome-extension://")) {
-            chrome.scripting.executeScript({
-              target: { tabId: tab.id },
-              files: ["js/cs.js"]
-            }).then(() => {
-              chrome.tabs.sendMessage(tab.id, {msg: "style", value: "someValue"}, function(response) {
-                if (chrome.runtime.lastError) {
-                  console.error(chrome.runtime.lastError.message);
-                } else {
-                  console.log("Response:", response);
-                }
-              });
-            }).catch((error) => {});
+          if (
+            !tab.url.startsWith("chrome://") &&
+            !tab.url.startsWith("chrome-extension://")
+          ) {
+            chrome.scripting
+              .executeScript({
+                target: { tabId: tab.id },
+                files: ["js/cs.js"],
+              })
+              .then(() => {
+                chrome.tabs.sendMessage(
+                  tab.id,
+                  { msg: "style", value: "someValue" },
+                  function (response) {
+                    if (chrome.runtime.lastError) {
+                      console.error(chrome.runtime.lastError.message);
+                    } else {
+                      console.log("Response:", response);
+                    }
+                  },
+                );
+              })
+              .catch((error) => {});
           }
         }
       });
@@ -35,13 +45,13 @@ chrome.runtime.onInstalled.addListener(() => {
   });
 });
 
-chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
   if (request.msg === "getActiveTab") {
-    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+    chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
       if (tabs && tabs.length > 0) {
-        sendResponse({tab: tabs[0]});
+        sendResponse({ tab: tabs[0] });
       } else {
-        sendResponse({error: "No active tab found."});
+        sendResponse({ error: "No active tab found." });
       }
     });
     return true;

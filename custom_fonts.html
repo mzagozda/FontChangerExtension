@@ -1,39 +1,92 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title></title>
+    <link href="select2/select2.css" rel="stylesheet" type="text/css">
     <link rel="stylesheet" type="text/css" href="css/custom_fonts.css">
 </head>
-<body>
-<main class="page-wrap">
-    <h1>Save New Font</h1>
-    <section class="panel">
-        <p class="lead">Select a font file and it will automatically show up in the font list.</p>
-        <div class="field">
-            <label for="font-name">Font Name</label>
-            <input type="text" id="font-name" placeholder="Font Name">
-        </div>
-        <div class="field">
-            <label for="file">Select Font (.ttf, .otf, .woff)</label>
-            <div id="file-drop-zone" class="drop-zone">
-                <input type="file" id="file" accept=".ttf,.otf,.woff">
-                <div class="drop-zone-text">Drop font file here or <span>browse</span></div>
-                <div id="file-name" class="file-name">No file selected</div>
-            </div>
-        </div>
-        <div class="actions">
-            <button id="save-font">Save Font</button>
-        </div>
-    </section>
-    <h2>Saved Fonts</h2>
-    <section class="panel">
-        <div class="saved-row">
-            <select id="saved-fonts" multiple="multiple"></select>
-            <button id="delete-font">Delete</button>
-        </div>
-    </section>
-</main>
 
+<body>
+    <main class="page-wrap">
+        <h1>Save New Font</h1>
+        <section class="panel">
+            <p class="lead">Select a font file and it will automatically show up in the font list.</p>
+            <div class="field">
+                <label for="font-name">Font Name</label>
+                <input type="text" id="font-name" placeholder="Font Name">
+            </div>
+            <div class="field">
+                <label for="file">Select Font (.ttf, .otf, .woff)</label>
+                <div id="file-drop-zone" class="drop-zone">
+                    <input type="file" id="file" accept=".ttf,.otf,.woff">
+                    <div class="drop-zone-text">Drop font file here or <span>browse</span></div>
+                    <div id="file-name" class="file-name">No file selected</div>
+                </div>
+            </div>
+            <div class="actions">
+                <button id="save-font">Save Font</button>
+            </div>
+        </section>
+        <h2>Saved Fonts</h2>
+        <section class="panel">
+            <div class="saved-row">
+                <select id="saved-fonts" multiple="multiple"></select>
+                <button id="delete-font">Delete</button>
+            </div>
+        </section>
+
+        <h2>Intelligent Profiles</h2>
+        <section class="panel">
+            <p class="lead">Create domain-based font profiles that override regular settings automatically.</p>
+            <div class="field">
+                <label for="profile-domain">Domain</label>
+                <input type="text" id="profile-domain" placeholder="example.com">
+            </div>
+            <div class="profile-grid">
+                <div class="field">
+                    <label for="profile-font-family">Font Family</label>
+                    <select id="font_family" class="inline-text"></select>
+                </div>
+                <div class="field">
+                    <label for="profile-font-weight">Font Weight</label>
+                    <select id="profile-font-weight">
+                        <option value="">Default</option>
+                        <option value="lighter">Lighter</option>
+                        <option value="normal">Normal</option>
+                        <option value="bolder">Bolder</option>
+                        <option value="bold">Bold</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="profile-font-style">Font Style</label>
+                    <select id="profile-font-style">
+                        <option value="">Default</option>
+                        <option value="normal">Normal</option>
+                        <option value="italic">Italic</option>
+                        <option value="oblique">Oblique</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="profile-font-size">Font Size (px)</label>
+                    <input type="text" id="profile-font-size" placeholder="16">
+                </div>
+            </div>
+            <div class="actions">
+                <button id="save-profile">Save Profile</button>
+            </div>
+        </section>
+
+        <section class="panel">
+            <div class="saved-row">
+                <select id="saved-profiles" multiple="multiple"></select>
+                <button id="delete-profile">Delete Profile</button>
+            </div>
+        </section>
+    </main>
+
+    <script src="js/default.js"></script>
     <script src="js/custom_fonts.js"></script>
 </body>
+
 </html>

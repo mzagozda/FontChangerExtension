@@ -15,7 +15,11 @@ body {
   width: 340px;
   padding: 0;
   color: #1f2937;
-  font: 13px/1.4 "Segoe UI", Tahoma, Arial, sans-serif;
+  font:
+    13px/1.4 "Segoe UI",
+    Tahoma,
+    Arial,
+    sans-serif;
 }
 
 .domain {
@@ -110,7 +114,6 @@ input[type="checkbox"] {
   height: 15px;
   margin: 0;
 }
-
 
 .popup-shell {
   padding: 14px;
