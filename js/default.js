@@ -21664,11 +21664,12 @@ var googlefonts = {
     }
   })(jQuery),
   $(document).ready(function () {
-    if (!$(".setting-type").length || !$("#font_family").length) {
+    if (!$("#font_family").length) {
       return;
     }
     var a = $("#font_family"),
       b = $("#font_family_chk"),
+      ba = $("#edit_global_chk"),
       c = $("#font_style"),
       d = $("#font_style_chk"),
       e = $("#font_weight"),
@@ -21676,6 +21677,7 @@ var googlefonts = {
       g = $("#font_size"),
       h = $("#font_size_chk"),
       i = null,
+      forceGlobalEdit = !1,
       aa = !1,
       ae = null,
       af = null,
@@ -21744,19 +21746,25 @@ var googlefonts = {
       },
       ag = function (a) {
         clearTimeout(ae);
-        clearTimeout(af);
         ae = setTimeout(function () {
           o(a);
         }, 120);
-        af = setTimeout(function () {
-          l();
-        }, 260);
       },
       ah = function (a) {
         clearTimeout(ae);
-        clearTimeout(af);
         o(a);
-        l();
+      },
+      getEditingState = function () {
+        return forceGlobalEdit || "global" === j.type ? k : j;
+      },
+      applyEditorScope = function () {
+        if (forceGlobalEdit) {
+          $(".setting-name").text("Global Font");
+          n(k);
+          $(".well").show().css("background-color", "whiteSmoke");
+        } else {
+          ad(j.type);
+        }
       };
 
     chrome.runtime.sendMessage({ msg: "getActiveTab" }, function (response) {
@@ -21768,18 +21776,58 @@ var googlefonts = {
         i = response.tab;
 
         l = function () {
-          chrome.storage.local.get("styles", function (a) {
+          chrome.storage.local.get(["styles", "profiles"], function (a) {
             a = a || {};
             a.styles = a.styles || {};
             a.styles.domain_styles = a.styles.domain_styles || {};
             a.styles.global_style = a.styles.global_style || {};
+            a.profiles = a.profiles || {};
 
             if (i && i.url) {
-              var b = i.url.match(/:\/\/(.[^\/]+)/)[1];
+              var b = ab(i);
+              if (!b) {
+                console.error("Tab or URL is undefined.");
+                return;
+              }
+
               if ("custom" === j.type) {
+                if (b && b.length && $("#font_family_chk").attr("checked")) {
+                  var d = $("#font_family").val(),
+                    e = $("#font_family").find("option:selected").data("type") || null;
+                  j.font_family = {
+                    name: d || null,
+                    type: e,
+                  };
+                  if ("custom" === e && y && d) {
+                    j.font_family.url = y[d];
+                  }
+                } else {
+                  j.font_family = {
+                    name: null,
+                    type: null,
+                  };
+                }
+              }
+
+              if (forceGlobalEdit) {
+                a.styles.global_style = k;
+              } else if ("custom" === j.type) {
                 a.styles.domain_styles[b] = j;
+                a.profiles[b] = {
+                  domain: b,
+                  style: {
+                    font_family: j.font_family || {
+                      name: null,
+                      type: null,
+                    },
+                    font_style: j.font_style || null,
+                    font_weight: j.font_weight || null,
+                    font_size: j.font_size || null,
+                  },
+                };
               } else {
                 delete a.styles.domain_styles[b];
+                delete a.profiles[b];
               }
               a.styles.global_style = k;
               chrome.storage.local.set(a);
@@ -21818,8 +21866,7 @@ var googlefonts = {
                 j.type = "global";
               }
               aa = !0;
-              $(".setting-type").val(j.type);
-              ad(j.type);
+              applyEditorScope();
               aa = !1;
             } else {
               console.error("Tab or URL is undefined.");
@@ -21833,11 +21880,13 @@ var googlefonts = {
       ((c.select2("val", i.font_style || "normal"), c.select2("enable", !0)),
         (e.select2("val", i.font_weight || "normal"), e.select2("enable", !0)),
         i.font_family.name
-          ? (a.select2("val", i.font_family.name),
+          ? ((pendingFamilySelection = i.font_family.name),
+            a.select2("val", i.font_family.name),
             b.attr("checked", "checked"),
             a.select2("enable"),
             enqueueGooglePreviewFont(i.font_family.name, !0))
-          : (a.select2("val", null),
+          : ((pendingFamilySelection = null),
+            a.select2("val", null),
             b.removeAttr("checked"),
             a.select2("disable")),
         i.font_size
@@ -21849,7 +21898,7 @@ var googlefonts = {
             g.attr("disabled", "disabled")));
     }),
       (o = function (a) {
-        "global" == j.type
+        "global" == j.type || forceGlobalEdit
           ? p(a)
           : i &&
             i.id &&
@@ -22007,6 +22056,7 @@ var googlefonts = {
       });
     });
     var y = {},
+      pendingFamilySelection = null,
       fontPreviewOrder = {},
       fontPreviewGoogleList = [],
       fontPreviewCanonicalFamilies = {},
@@ -22323,6 +22373,9 @@ var googlefonts = {
           formatResult: buildPreviewMarkup,
           formatSelection: buildPreviewMarkup,
         });
+        if (pendingFamilySelection) {
+          a.select2("val", pendingFamilySelection);
+        }
         bindPreviewHoverWatcher();
         a.off("select2-open.fontPreviewLazy").on("select2-open.fontPreviewLazy", function () {
           previewLog("open dropdown");
@@ -22337,6 +22390,9 @@ var googlefonts = {
       ak(b && b.google_fonts_api_key, function (a) {
         previewLog("fonts loaded", a && a.length ? a.length : 0);
         al(a);
+        if ("function" == typeof m) {
+          m();
+        }
       });
     }),
       e.select2({
@@ -22371,20 +22427,76 @@ var googlefonts = {
           url: "/custom_fonts.html",
         });
       }),
-      $(".setting-type").change(function () {
-        var a = $(this).val();
-        j.type = a;
-        var b = ad(a);
-        if (!aa) {
-          ag(b);
+      $("#save-profile-popup").click(function () {
+        if (forceGlobalEdit) {
+          console.warn("Turn off Edit Global Settings to save a site profile.");
+          return;
         }
+        if (!(i && i.url)) {
+          console.warn("Current tab is unavailable.");
+          return;
+        }
+        var c = ab(i);
+        if (!c) {
+          console.warn("Unable to resolve current domain.");
+          return;
+        }
+        var d = j;
+        if (c && c.length && $("#font_family_chk").attr("checked")) {
+          var e = $("#font_family").val(),
+            f = $("#font_family").find("option:selected").data("type") || null;
+          d.font_family = {
+            name: e || null,
+            type: f,
+          };
+          if ("custom" === f && y && e) {
+            d.font_family.url = y[e];
+          }
+        } else {
+          d.font_family = {
+            name: null,
+            type: null,
+          };
+        }
+        chrome.storage.local.get(["styles", "profiles"], function (a) {
+          a = a || {};
+          a.styles = a.styles || {};
+          a.styles.domain_styles = a.styles.domain_styles || {};
+          a.styles.global_style = a.styles.global_style || {};
+          a.profiles = a.profiles || {};
+
+          a.styles.domain_styles[c] = d;
+          a.profiles[c] = {
+            domain: c,
+            style: {
+              font_family: d.font_family || {
+                name: null,
+                type: null,
+              },
+              font_style: d.font_style || null,
+              font_weight: d.font_weight || null,
+              font_size: d.font_size || null,
+            },
+          };
+          chrome.storage.local.set(a, function () {
+            if (chrome.runtime.lastError) {
+              console.error("Unable to save profile. Please try again.");
+              return;
+            }
+            console.info("Profile saved for " + c);
+          });
+        });
+      }),
+      ba.change(function () {
+        forceGlobalEdit = !!$(this).attr("checked");
+        applyEditorScope();
       }),
       $(".enable-text").change(function () {
         var a = $(this).attr("data-target")
             ? $($(this).attr("data-target"))
             : $(this).closest(".control-row").find("input[type='text']"),
           b = null;
-        ((b = "global" === j.type ? k : j),
+        ((b = getEditingState()),
           $(this).attr("checked")
             ? ((b[a[0].id] = a.val()), a.removeAttr("disabled"))
             : ((b[a[0].id] = ""), a.attr("disabled", "disabled")),
@@ -22392,7 +22504,7 @@ var googlefonts = {
       }),
       $(".enable-select").change(function () {
         var b = null;
-        ((b = "global" === j.type ? k : j),
+        ((b = getEditingState()),
           $(this).attr("checked")
             ? ((b.font_family = {
                 name: a.val(),
@@ -22410,19 +22522,19 @@ var googlefonts = {
       }),
       c.change(function () {
         var a = null;
-        ((a = "global" === j.type ? k : j),
+        ((a = getEditingState()),
           (a.font_style = $(this).val()),
           ag(a));
       }),
       e.change(function () {
         var a = null;
-        ((a = "global" === j.type ? k : j),
+        ((a = getEditingState()),
           (a.font_weight = $(this).val()),
           ag(a));
       }),
       g.keyup(function () {
         var a = null;
-        a = "global" === j.type ? k : j;
+        a = getEditingState();
         var b = parseFloat($(this).val());
         ((a.font_size = b), $(this).val(b), ag(a));
       }),
@@ -22431,7 +22543,7 @@ var googlefonts = {
       }),
       a.change(function () {
         var b = null;
-        b = "global" === j.type ? k : j;
+        b = getEditingState();
         var c = a.val();
         ((b.font_family.name = c),
           (b.font_family.type = a.find("option:selected").data("type")),
@@ -22440,8 +22552,9 @@ var googlefonts = {
           ag(b));
       }),
       $(".done").click(function () {
-        var a = "global" === j.type ? k : "custom" === j.type ? j : {};
-        ah(a);
+        var a = getEditingState();
+        clearTimeout(ae);
+        o(a);
         window.close();
       });
   }),

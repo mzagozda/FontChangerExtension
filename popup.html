@@ -10,13 +10,9 @@
 <body>
     <div class="popup-shell">
         <h3 class="domain">Change Style</h3>
-        <div class="mode-row">
-            <label for="setting-type">Use</label>
-            <select id="setting-type" class="setting-type">
-                <option value="global">Global Font</option>
-                <option value="custom">Site Specific Font</option>
-                <option value="none">No Font</option>
-            </select>
+        <div class="mode-row global-edit-row">
+            <label for="edit_global_chk">Edit Global Settings</label>
+            <input type="checkbox" id="edit_global_chk">
         </div>
         <div class="well">
             <div class="setting-name">Global Settings</div>
@@ -68,7 +64,10 @@
                 </div>
             </div>
         </div>
-        <div class="done-cont"><button class="done" type="button">Done</button></div>
+        <div class="done-cont">
+            <button id="save-profile-popup" type="button">Save to Profile</button>
+            <button class="done" type="button">Done</button>
+        </div>
     </div>
 
 

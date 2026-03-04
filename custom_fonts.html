@@ -9,7 +9,42 @@
 
 <body>
     <main class="page-wrap">
-        <h1>Save New Font</h1>
+        <h1>Global Settings</h1>
+        <section class="panel">
+            <div class="profile-grid">
+                <div class="field">
+                    <label for="global-font-family">Font Family</label>
+                    <select id="global-font-family" class="inline-text"></select>
+                </div>
+                <div class="field">
+                    <label for="global-font-weight">Font Weight</label>
+                    <select id="global-font-weight">
+                        <option value="normal">Normal</option>
+                        <option value="lighter">Lighter</option>
+                        <option value="bolder">Bolder</option>
+                        <option value="bold">Bold</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="global-font-style">Font Style</label>
+                    <select id="global-font-style">
+                        <option value="normal">Normal</option>
+                        <option value="italic">Italic</option>
+                        <option value="oblique">Oblique</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="global-font-size">Font Size (px)</label>
+                    <input type="text" id="global-font-size" placeholder="16">
+                </div>
+            </div>
+            <div class="actions">
+                <button id="save-global">Save Global Settings</button>
+                <button id="reset-global">Reset Global</button>
+            </div>
+        </section>
+
+        <h2>Save New Font</h2>
         <section class="panel">
             <p class="lead">Select a font file and it will automatically show up in the font list.</p>
             <div class="field">
@@ -33,6 +68,9 @@
             <div class="saved-row">
                 <select id="saved-fonts" multiple="multiple"></select>
                 <button id="delete-font">Delete</button>
+            </div>
+            <div class="actions" style="margin-top: 10px;">
+                <button id="reset-fonts">Reset Fonts</button>
             </div>
         </section>
 
@@ -81,7 +119,14 @@
                 <select id="saved-profiles" multiple="multiple"></select>
                 <button id="delete-profile">Delete Profile</button>
             </div>
+            <div class="actions" style="margin-top: 10px;">
+                <button id="reset-profiles">Reset Profiles</button>
+            </div>
         </section>
+
+        <div class="actions reset-all-wrap" style="margin-top: 14px;">
+            <button id="reset-all-settings">Reset All Settings</button>
+        </div>
     </main>
 
     <script src="js/default.js"></script>

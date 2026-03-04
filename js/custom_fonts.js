@@ -29,6 +29,7 @@
 
   var customFonts = {};
   var profiles = {};
+  var styles = {};
   var selectedFile = null;
 
   var googleFontsCache = null;
@@ -374,10 +375,19 @@
   }
 
   function renderFontFamilySelect() {
-    var select = qs("#font_family") || qs("#profile-font-family");
-    if (!select) return;
+    var selectors = ["#font_family", "#global-font-family"];
+    var selects = selectors
+      .map(function (selector) {
+        return qs(selector);
+      })
+      .filter(Boolean);
+    if (!selects.length) return;
 
-    var selected = select.value || "";
+    var selectedMap = {};
+    selects.forEach(function (select) {
+      selectedMap[select.id] =
+        select.value || select.getAttribute("data-selected-family") || "";
+    });
 
     loadGoogleFonts(function (googleFamilies) {
       previewKnownGoogleFamilies = {};
@@ -402,50 +412,139 @@
         return a.name.toLowerCase() > b.name.toLowerCase() ? 1 : -1;
       });
 
-      var seen = {};
-      var fragment = document.createDocumentFragment();
+      selects.forEach(function (select) {
+        var seen = {};
+        var fragment = document.createDocumentFragment();
 
-      items.forEach(function (item) {
-        if (!item || !item.name) return;
-        if (seen[item.name]) return;
-        seen[item.name] = true;
-        var option = document.createElement("option");
-        option.value = item.name;
-        option.textContent = item.name;
-        option.setAttribute("data-type", item.type);
-        fragment.appendChild(option);
-      });
-
-      select.innerHTML = "";
-      select.appendChild(fragment);
-
-      if (selected) {
-        Array.prototype.some.call(select.options, function (opt) {
-          if (opt.value === selected) {
-            select.value = selected;
-            return true;
-          }
-          return false;
+        items.forEach(function (item) {
+          if (!item || !item.name) return;
+          if (seen[item.name]) return;
+          seen[item.name] = true;
+          var option = document.createElement("option");
+          option.value = item.name;
+          option.textContent = item.name;
+          option.setAttribute("data-type", item.type);
+          fragment.appendChild(option);
         });
-      }
 
-      if (window.jQuery && jQuery.fn && jQuery.fn.select2) {
-        var $select = jQuery(select);
-        if ($select.data("select2")) {
-          $select.select2("destroy");
+        select.innerHTML = "";
+        select.appendChild(fragment);
+
+        var selected = selectedMap[select.id] || "";
+        if (selected) {
+          Array.prototype.some.call(select.options, function (opt) {
+            if (opt.value === selected) {
+              select.value = selected;
+              return true;
+            }
+            return false;
+          });
         }
-        $select.select2({
-          placeholder: "Select a Font",
-          escapeMarkup: function (markup) {
-            return markup;
-          },
-          formatResult: buildPreviewMarkup,
-          formatSelection: buildPreviewMarkup,
-        });
-        $select.select2("enable", true);
-        $select.off("change.profileType");
-        bindPreviewWatchers(select);
+
+        if (window.jQuery && jQuery.fn && jQuery.fn.select2) {
+          var $select = jQuery(select);
+          if ($select.data("select2")) {
+            $select.select2("destroy");
+          }
+          $select.select2({
+            placeholder: "Select a Font",
+            escapeMarkup: function (markup) {
+              return markup;
+            },
+            formatResult: buildPreviewMarkup,
+            formatSelection: buildPreviewMarkup,
+          });
+          $select.select2("enable", true);
+          $select.off("change.profileType");
+          bindPreviewWatchers(select);
+        }
+      });
+    });
+  }
+
+  function renderGlobalSettings() {
+    var global = (styles && styles.global_style) || {};
+    var familySelect = qs("#global-font-family");
+    var weightSelect = qs("#global-font-weight");
+    var styleSelect = qs("#global-font-style");
+    var sizeInput = qs("#global-font-size");
+
+    if (familySelect) {
+      familySelect.setAttribute(
+        "data-selected-family",
+        global.font_family && global.font_family.name ? global.font_family.name : "",
+      );
+    }
+    if (weightSelect) {
+      weightSelect.value = global.font_weight || "normal";
+    }
+    if (styleSelect) {
+      styleSelect.value = global.font_style || "normal";
+    }
+    if (sizeInput) {
+      sizeInput.value = global.font_size ? String(global.font_size) : "";
+    }
+  }
+
+  function saveGlobalSettings() {
+    var familySelect = qs("#global-font-family");
+    var weightSelect = qs("#global-font-weight");
+    var styleSelect = qs("#global-font-style");
+    var sizeInput = qs("#global-font-size");
+
+    var familyName = familySelect ? familySelect.value : "";
+    var selectedOption = familySelect ? familySelect.options[familySelect.selectedIndex] : null;
+    var familyType = selectedOption
+      ? selectedOption.getAttribute("data-type") || "standard"
+      : "standard";
+    var weight = weightSelect ? weightSelect.value : "normal";
+    var style = styleSelect ? styleSelect.value : "normal";
+    var sizeRaw = sizeInput ? sizeInput.value.trim() : "";
+    var parsedSize = null;
+
+    if (!familyName) {
+      console.warn("Please select a global font family.");
+      return;
+    }
+
+    if (sizeRaw) {
+      parsedSize = parseFloat(sizeRaw);
+      if (isNaN(parsedSize)) {
+        console.warn("Global font size must be a number.");
+        return;
       }
+    }
+
+    var globalStyle = {
+      font_family: {
+        name: familyName,
+        type: familyType,
+      },
+      font_weight: weight || null,
+      font_style: style || null,
+      font_size: parsedSize,
+    };
+
+    if (familyType === "custom") {
+      if (!customFonts[familyName]) {
+        console.warn("Selected custom font was not found.");
+        return;
+      }
+      globalStyle.font_family.url = customFonts[familyName];
+    }
+
+    chrome.storage.local.get("styles", function (data) {
+      var nextStyles = (data && data.styles) || {};
+      nextStyles.domain_styles = nextStyles.domain_styles || {};
+      nextStyles.global_style = globalStyle;
+      styles = nextStyles;
+      chrome.storage.local.set({ styles: nextStyles }, function () {
+        if (chrome.runtime.lastError) {
+          console.error("Unable to save global settings. Please try again.");
+          return;
+        }
+        refreshTabsStyles();
+      });
     });
   }
 
@@ -492,7 +591,12 @@
       );
     }
 
-    ["#profile-font-weight", "#profile-font-style"].forEach(function (selector) {
+    [
+      "#profile-font-weight",
+      "#profile-font-style",
+      "#global-font-weight",
+      "#global-font-style",
+    ].forEach(function (selector) {
       var el = qs(selector);
       if (!el) return;
 
@@ -507,11 +611,11 @@
           return markup;
         },
         formatResult:
-          selector === "#profile-font-weight"
+          selector === "#profile-font-weight" || selector === "#global-font-weight"
             ? buildWeightMarkup
             : buildStyleMarkup,
         formatSelection:
-          selector === "#profile-font-weight"
+          selector === "#profile-font-weight" || selector === "#global-font-weight"
             ? buildWeightMarkup
             : buildStyleMarkup,
       });
@@ -587,7 +691,7 @@
       if (fileInput) fileInput.value = "";
       if (fileName) fileName.textContent = "No file selected";
       if (dropZone) dropZone.classList.remove("has-file");
-      alert("Font must be of type .ttf, .otf or .woff");
+      console.warn("Font must be of type .ttf, .otf or .woff");
       return;
     }
 
@@ -607,21 +711,21 @@
     var file = selectedFile || (fileInput && fileInput.files ? fileInput.files[0] : null);
 
     if (!fontName) {
-      alert("Please type a name.");
+      console.warn("Please type a name.");
       return;
     }
     if (customFonts[fontName]) {
-      alert('File name "' + fontName + '" is already in use.');
+      console.warn('File name "' + fontName + '" is already in use.');
       return;
     }
     if (!file) {
-      alert("Please select a file.");
+      console.warn("Please select a file.");
       return;
     }
 
     var ext = getFileExt(file.name);
     if (!ext) {
-      alert("Please select a file.");
+      console.warn("Please select a file.");
       return;
     }
 
@@ -635,7 +739,7 @@
       customFonts[fontName] = "data:" + mime + ";base64," + result.replace(/data:.*?;base64,/, "");
       chrome.storage.local.set({ custom_fonts: customFonts }, function () {
         if (chrome.runtime.lastError) {
-          alert("Unable to save font. Please try again.");
+          console.error("Unable to save font. Please try again.");
           return;
         }
         renderSavedFonts();
@@ -737,17 +841,17 @@
     var parsedSize = null;
 
     if (!domain) {
-      alert("Please enter a valid domain.");
+      console.warn("Please enter a valid domain.");
       return;
     }
     if (!familyName) {
-      alert("Please select a font family.");
+      console.warn("Please select a font family.");
       return;
     }
     if (sizeRaw) {
       parsedSize = parseFloat(sizeRaw);
       if (isNaN(parsedSize)) {
-        alert("Font size must be a number.");
+        console.warn("Font size must be a number.");
         return;
       }
     }
@@ -764,7 +868,7 @@
 
     if (familyType === "custom") {
       if (!customFonts[familyName]) {
-        alert("Selected custom font was not found.");
+        console.warn("Selected custom font was not found.");
         return;
       }
       stylePayload.font_family.url = customFonts[familyName];
@@ -773,7 +877,7 @@
     profiles[domain] = { domain: domain, style: stylePayload };
     chrome.storage.local.set({ profiles: profiles }, function () {
       if (chrome.runtime.lastError) {
-        alert("Unable to save profile. Please try again.");
+        console.error("Unable to save profile. Please try again.");
         return;
       }
       renderProfiles();
@@ -796,6 +900,112 @@
     });
   }
 
+  function resetGlobalSettings() {
+    if (!confirm("Reset global settings only?")) {
+      return;
+    }
+
+    chrome.storage.local.get("styles", function (data) {
+      var nextStyles = (data && data.styles) || {};
+      nextStyles.domain_styles = nextStyles.domain_styles || {};
+      nextStyles.global_style = {};
+      styles = nextStyles;
+
+      chrome.storage.local.set({ styles: nextStyles }, function () {
+        if (chrome.runtime.lastError) {
+          console.error("Unable to reset global settings.");
+          return;
+        }
+        renderGlobalSettings();
+        renderFontFamilySelect();
+        refreshTabsStyles();
+      });
+    });
+  }
+
+  function resetFontsSettings() {
+    if (!confirm("Reset custom fonts only?")) {
+      return;
+    }
+
+    chrome.storage.local.set({ custom_fonts: {} }, function () {
+      if (chrome.runtime.lastError) {
+        console.error("Unable to reset fonts.");
+        return;
+      }
+      customFonts = {};
+      renderSavedFonts();
+      renderFontFamilySelect();
+      resetFileForm();
+      refreshTabsStyles();
+    });
+  }
+
+  function resetProfilesSettings() {
+    if (!confirm("Reset profiles only?")) {
+      return;
+    }
+
+    chrome.storage.local.get("styles", function (data) {
+      var nextStyles = (data && data.styles) || {};
+      nextStyles.global_style = nextStyles.global_style || {};
+      nextStyles.domain_styles = {};
+      styles = nextStyles;
+      profiles = {};
+
+      chrome.storage.local.set(
+        {
+          profiles: {},
+          styles: nextStyles,
+        },
+        function () {
+          if (chrome.runtime.lastError) {
+            console.error("Unable to reset profiles.");
+            return;
+          }
+          renderProfiles();
+          clearProfileInputs();
+          refreshTabsStyles();
+        },
+      );
+    });
+  }
+
+  function resetAllSettings() {
+    if (!confirm("Reset all settings, profiles, and custom fonts?")) {
+      return;
+    }
+
+    chrome.storage.local.remove(["styles", "profiles", "custom_fonts"], function () {
+      if (chrome.runtime.lastError) {
+        console.error("Unable to reset settings. Please try again.");
+        return;
+      }
+
+      customFonts = {};
+      profiles = {};
+      styles = {};
+      googleFontsCache = null;
+
+      var familySelect = qs("#font_family");
+      if (familySelect) {
+        familySelect.setAttribute("data-selected-family", "");
+      }
+      var globalFamilySelect = qs("#global-font-family");
+      if (globalFamilySelect) {
+        globalFamilySelect.setAttribute("data-selected-family", "");
+      }
+
+      renderGlobalSettings();
+      renderSavedFonts();
+      renderFontFamilySelect();
+      renderProfiles();
+      resetFileForm();
+      clearProfileInputs();
+      refreshTabsStyles();
+    });
+  }
+
   function bindEvents() {
     var fileInput = qs("#file");
     var dropZone = qs("#file-drop-zone");
@@ -803,6 +1013,11 @@
     var deleteFontBtn = qs("#delete-font");
     var saveProfileBtn = qs("#save-profile");
     var deleteProfileBtn = qs("#delete-profile");
+    var saveGlobalBtn = qs("#save-global");
+    var resetGlobalBtn = qs("#reset-global");
+    var resetFontsBtn = qs("#reset-fonts");
+    var resetProfilesBtn = qs("#reset-profiles");
+    var resetAllBtn = qs("#reset-all-settings");
 
     if (fileInput) {
       fileInput.addEventListener("change", function () {
@@ -862,11 +1077,33 @@
     if (deleteProfileBtn) {
       deleteProfileBtn.addEventListener("click", deleteSelectedProfiles);
     }
+
+    if (saveGlobalBtn) {
+      saveGlobalBtn.addEventListener("click", saveGlobalSettings);
+    }
+
+    if (resetGlobalBtn) {
+      resetGlobalBtn.addEventListener("click", resetGlobalSettings);
+    }
+
+    if (resetFontsBtn) {
+      resetFontsBtn.addEventListener("click", resetFontsSettings);
+    }
+
+    if (resetProfilesBtn) {
+      resetProfilesBtn.addEventListener("click", resetProfilesSettings);
+    }
+
+    if (resetAllBtn) {
+      resetAllBtn.addEventListener("click", resetAllSettings);
+    }
   }
 
-  chrome.storage.local.get(["custom_fonts", "profiles"], function (data) {
+  chrome.storage.local.get(["custom_fonts", "profiles", "styles"], function (data) {
     customFonts = (data && data.custom_fonts) || {};
     profiles = (data && data.profiles) || {};
+    styles = (data && data.styles) || {};
+    renderGlobalSettings();
     renderSavedFonts();
     renderFontFamilySelect();
     renderProfiles();

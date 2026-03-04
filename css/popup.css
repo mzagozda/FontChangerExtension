@@ -50,6 +50,20 @@ body {
   margin-bottom: 12px;
 }
 
+.global-edit-row {
+  justify-content: space-between;
+}
+
+.global-edit-row label {
+  margin: 0;
+  font-weight: 600;
+}
+
+.global-edit-row input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+}
+
 .mode-row label {
   font-weight: 600;
   white-space: nowrap;
@@ -249,7 +263,28 @@ select:not([multiple]):disabled {
 .done-cont {
   margin-top: 12px;
   display: flex;
+  gap: 8px;
   justify-content: flex-end;
+}
+
+#save-profile-popup {
+  min-width: 120px;
+  height: 32px;
+  border: 1px solid var(--fc-border);
+  border-radius: 6px;
+  background: var(--fc-surface);
+  color: var(--fc-text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+#save-profile-popup:hover {
+  background: #f3f4f6;
+}
+
+#save-profile-popup:active {
+  background: #e5e7eb;
 }
 
 .done {

@@ -373,3 +373,29 @@ button:active {
 #delete-profile:active {
   background: #991b1b;
 }
+
+#reset-global,
+#reset-fonts,
+#reset-profiles,
+#reset-all-settings {
+  border-color: #b91c1c;
+  background: #dc2626;
+}
+
+#reset-global:hover,
+#reset-fonts:hover,
+#reset-profiles:hover,
+#reset-all-settings:hover {
+  background: #b91c1c;
+}
+
+#reset-global:active,
+#reset-fonts:active,
+#reset-profiles:active,
+#reset-all-settings:active {
+  background: #991b1b;
+}
+
+.reset-all-wrap {
+  justify-content: flex-end;
+}
