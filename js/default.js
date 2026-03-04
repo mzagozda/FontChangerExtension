@@ -21676,6 +21676,7 @@ var googlefonts = {
       g = $("#font_size"),
       h = $("#font_size_chk"),
       i = null,
+      aa = !1,
       j = {
         type: "global",
         font_family: {
@@ -21688,6 +21689,57 @@ var googlefonts = {
       },
       k = {};
     jQuery.extend(k, j);
+
+    var ab = function (a) {
+        if (!a || !a.url) {
+          return null;
+        }
+        try {
+          return new URL(a.url).hostname.toLowerCase().replace(/^www\./, "");
+        } catch (b) {
+          var c = a.url.match(/:\/\/(.[^\/]+)/);
+          return c && c[1] ? c[1].toLowerCase().replace(/^www\./, "") : null;
+        }
+      },
+      ac = function (a, b) {
+        if (!a || !b) return null;
+        var c = b.toLowerCase();
+        if (a[c]) return a[c];
+        for (var d = c.split("."), e = 1; e < d.length - 1; e++) {
+          var f = d.slice(e).join(".");
+          if (a[f]) return a[f];
+        }
+        return null;
+      },
+      ad = function (a) {
+        var b = null;
+        if ("global" === a) {
+          $(".setting-name").text("Global Font");
+          n(k);
+          $(".well").show().css("background-color", "whiteSmoke");
+          b = k;
+        } else if ("custom" === a) {
+          $(".setting-name").text("Site Font");
+          n(j);
+          $(".well").show().css("background-color", "transparent");
+          b = j;
+        } else {
+          j = {
+            type: "custom",
+            font_family: {
+              name: null,
+              type: null,
+            },
+            font_style: null,
+            font_weight: null,
+            font_size: null,
+          };
+          $(".setting-name").text("No Font");
+          $(".well").hide();
+          b = {};
+        }
+        return b;
+      };
 
     chrome.runtime.onMessage.addListener(
       function (request, sender, sendResponse) {
@@ -21729,9 +21781,11 @@ var googlefonts = {
         };
 
         m = function () {
-          chrome.storage.local.get("styles", function (a) {
+          chrome.storage.local.get(["styles", "profiles"], function (a) {
             if (i && i.url) {
-              var b = i.url.match(/:\/\/(.[^\/]+)/)[1];
+              var b = ab(i),
+                c = ac(a && a.profiles, b),
+                d = c && c.style ? c.style : c;
               if (a && a.styles) {
                 if (a.styles.domain_styles && a.styles.domain_styles[b]) {
                   j = a.styles.domain_styles[b];
@@ -21740,22 +21794,29 @@ var googlefonts = {
                   k = a.styles.global_style;
                 }
               }
-              var c = null;
-              if ("global" === j.type) {
-                c = k;
-                n(c);
-              } else if ("custom" === j.type) {
-                c = j;
-                n(c);
+              if (d) {
+                j = {
+                  type: "custom",
+                  font_family: d.font_family || {
+                    name: null,
+                    type: null,
+                  },
+                  font_style: d.font_style || null,
+                  font_weight: d.font_weight || null,
+                  font_size: d.font_size || null,
+                };
+              } else if (!j.type) {
+                j.type = "global";
               }
-              $(".setting-type").val(j.type).trigger("change");
+              aa = !0;
+              $(".setting-type").val(j.type);
+              ad(j.type);
+              aa = !1;
             } else {
               console.error("Tab or URL is undefined.");
             }
           });
         };
-
-        l();
         m();
       }
     });
@@ -21938,30 +21999,13 @@ var googlefonts = {
         });
       }),
       $(".setting-type").change(function () {
-        ((j.type = $(this).val()),
-          "global" === j.type
-            ? ($(".setting-name").text("Global Font"),
-              n(k),
-              $(".well").show().css("background-color", "whiteSmoke"),
-              o(k))
-            : "custom" === j.type
-              ? ($(".setting-name").text("Site Font"),
-                n(j),
-                $(".well").show().css("background-color", "transparent"),
-                o(j))
-              : ((j = {
-                  type: "custom",
-                  font_family: {
-                    name: null,
-                    type: null,
-                  },
-                  font_style: null,
-                  font_weight: null,
-                  font_size: null,
-                }),
-                $(".well").hide(),
-                o({})),
-          l());
+        var a = $(this).val();
+        j.type = a;
+        var b = ad(a);
+        if (!aa) {
+          o(b);
+          l();
+        }
       }),
       f.change(function () {
         var a = null;
