@@ -46,9 +46,7 @@
           : void alert("Please select a file.");
       }),
       h("#delete-font").addEventListener("click", function () {
-        var a = Array.prototype.slice.call(
-          document.querySelectorAll("#saved-fonts option"),
-        );
+        var a = t("#saved-fonts option");
         a &&
           (a.forEach(function (a) {
             if (a.selected) {
@@ -107,9 +105,7 @@
         }),
       h("#delete-profile") &&
         h("#delete-profile").addEventListener("click", function () {
-          var a = Array.prototype.slice.call(
-            document.querySelectorAll("#saved-profiles option"),
-          );
+          var a = t("#saved-profiles option");
           if (!a) return;
           (a.forEach(function (a) {
             a.selected && delete p[a.value];
@@ -331,6 +327,9 @@
         });
       });
   }
+  function t(a) {
+    return Array.prototype.slice.call(document.querySelectorAll(a));
+  }
   var e = {},
     f = null,
     g = null,
@@ -343,12 +342,7 @@
       l(),
       m());
   }),
-    document.addEventListener(
-      "DOMContentLoaded",
-      function () {
-        (document.removeEventListener("DOMContentLoaded", arguments.callee, !1),
-          a());
-      },
-      !1,
-    ));
+    document.addEventListener("DOMContentLoaded", function () {
+      a();
+    }));
 })();

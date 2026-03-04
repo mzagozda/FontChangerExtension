@@ -17,6 +17,8 @@ u();
 var style = document.createElement("style");
 style.type = "text/css";
 var wf = document.createElement("link");
+var lastCssText = "";
+var lastFontHref = "";
 
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
   if (message.msg === "style") {
@@ -85,15 +87,19 @@ var updateStyle = function (a) {
       b += "font-weight:" + a[c] + " !important;";
     } else if (c === "font_family" && a[c] && a[c].name && a[c].type) {
       if (a[c].type === "google") {
-        wf.href =
+        var e =
           (document.location.protocol === "https:" ? "https" : "http") +
           "://fonts.googleapis.com/css?family=" +
           a[c].name.replace(/\s/g, "+");
-        wf.type = "text/css";
-        wf.rel = "stylesheet";
-        document.head
-          ? document.head.appendChild(wf)
-          : document.documentElement.appendChild(wf);
+        if (lastFontHref !== e) {
+          lastFontHref = e;
+          wf.href = e;
+          wf.type = "text/css";
+          wf.rel = "stylesheet";
+          document.head
+            ? document.head.appendChild(wf)
+            : document.documentElement.appendChild(wf);
+        }
       } else if (a[c].type === "custom") {
         var d =
           "@font-face{  font-family: '" +
@@ -110,8 +116,14 @@ var updateStyle = function (a) {
     }
   }
   b += "}";
+  if (b === lastCssText) {
+    return;
+  }
+  lastCssText = b;
   style.innerText = b;
-  document.head
-    ? document.head.appendChild(style)
-    : document.documentElement.appendChild(style);
+  if (!style.isConnected) {
+    document.head
+      ? document.head.appendChild(style)
+      : document.documentElement.appendChild(style);
+  }
 };

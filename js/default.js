@@ -21677,6 +21677,8 @@ var googlefonts = {
       h = $("#font_size_chk"),
       i = null,
       aa = !1,
+      ae = null,
+      af = null,
       j = {
         type: "global",
         font_family: {
@@ -21739,16 +21741,23 @@ var googlefonts = {
           b = {};
         }
         return b;
-      };
-
-    chrome.runtime.onMessage.addListener(
-      function (request, sender, sendResponse) {
-        if (request.msg === "style") {
-          console.log("Received message:", request.value);
-          sendResponse({ status: "success" });
-        }
       },
-    );
+      ag = function (a) {
+        clearTimeout(ae);
+        clearTimeout(af);
+        ae = setTimeout(function () {
+          o(a);
+        }, 120);
+        af = setTimeout(function () {
+          l();
+        }, 260);
+      },
+      ah = function (a) {
+        clearTimeout(ae);
+        clearTimeout(af);
+        o(a);
+        l();
+      };
 
     chrome.runtime.sendMessage({ msg: "getActiveTab" }, function (response) {
       if (chrome.runtime.lastError) {
@@ -21871,6 +21880,94 @@ var googlefonts = {
             );
         });
       }),
+      (ai = function (a) {
+        if (a && Array.isArray(a.items)) {
+          return a.items
+            .map(function (a) {
+              return a && a.family
+                ? {
+                    name: a.family,
+                    type: "google",
+                  }
+                : null;
+            })
+            .filter(function (a) {
+              return !!a;
+            });
+        }
+        return [];
+      }),
+      (am = function (a) {
+        if (!a) return [];
+        var b = a;
+        if ("string" === typeof b) {
+          b = b.replace(/^\)\]\}'\n?/, "");
+          try {
+            b = JSON.parse(b);
+          } catch (a) {
+            return [];
+          }
+        }
+        var c =
+          b && Array.isArray(b.familyMetadataList)
+            ? b.familyMetadataList
+            : b && Array.isArray(b.items)
+              ? b.items
+              : [];
+        return c
+          .map(function (a) {
+            var b = a && (a.family || a.familyName);
+            return b
+              ? {
+                  name: b,
+                  type: "google",
+                }
+              : null;
+          })
+          .filter(function (a) {
+            return !!a;
+          });
+      }),
+      (ak = function (a, b) {
+        var c = ai(googlefonts);
+        var d = function () {
+          fetch("https://fonts.google.com/metadata/fonts")
+            .then(function (a) {
+              if (!a.ok) throw new Error("Failed to fetch Google metadata");
+              return a.text();
+            })
+            .then(function (a) {
+              var d = am(a);
+              b(d.length ? d : c);
+            })
+            .catch(function () {
+              b(c);
+            });
+        };
+        if (!a) {
+          d();
+          return;
+        }
+        fetch(
+          "https://www.googleapis.com/webfonts/v1/webfonts?sort=alpha&key=" +
+            encodeURIComponent(a),
+        )
+          .then(function (a) {
+            if (!a.ok) throw new Error("Failed to fetch Google Fonts API");
+            return a.json();
+          })
+          .then(function (a) {
+            var e = ai(a);
+            if (e.length) {
+              b(e);
+              return;
+            }
+            d();
+          })
+          .catch(function () {
+            d();
+          });
+      }),
       (q = [
         "Arial",
         "Arial Black",
@@ -21901,92 +21998,62 @@ var googlefonts = {
         type: "standard",
       });
     });
-    var s = [];
-    if (googlefonts)
-      for (var t in googlefonts.items)
-        s.push({
-          name: googlefonts.items[t].family,
-          type: "google",
-        });
-    var u = [];
-    for (var v in s)
-      if ((u.push(s[v].name), 30 === u.length)) {
-        var w = $('<link type="text/css" rel="stylesheet"> ');
-        (w.attr(
-          "href",
-          ("https:" == document.location.protocol ? "https" : "http") +
-            "://fonts.googleapis.com/css?family=" +
-            u.join("|").replace(/\s/g, "+"),
-        ),
-          document.head
-            ? $(document.head).append(w)
-            : $(document.documentElement).append(w),
-          (u = []));
-      }
-    ((w = $('<link type="text/css" rel="stylesheet"> ')),
-      w.attr(
-        "href",
-        ("https:" == document.location.protocol ? "https" : "http") +
-          "://fonts.googleapis.com/css?family=" +
-          u.join("|").replace(/\s/g, "+"),
-      ),
-      document.head
-        ? $(document.head).append(w)
-        : $(document.documentElement).append(w));
-    var x = r.concat(s),
-      y = {};
-    (chrome.storage.local.get("custom_fonts", function (b) {
-      var c = b.custom_fonts;
-      if (c) {
-        y = c;
-        var d = "";
-        if (
-          (Object.keys(c).forEach(function (a) {
+    var y = {},
+      al = function (b) {
+        var c = r.concat(b || []);
+        if (a.data("select2")) {
+          a.select2("destroy");
+        }
+        a.empty();
+        if (y) {
+          var d = "";
+          Object.keys(y).forEach(function (a) {
             ((d +=
               "@font-face{  font-family: '" +
               a +
               "';src: url(" +
-              c[a] +
+              y[a] +
               ");} "),
-              x.push({
+              c.push({
                 name: a,
                 type: "custom",
-                url: c[a],
+                url: y[a],
               }));
-          }),
-          d)
-        ) {
-          var e = document.createElement("style");
-          ((e.type = "text/css"),
-            (e.innerText = d),
-            document.head
-              ? document.head.appendChild(e)
-              : document.documentElement.appendChild(e));
+          });
+          if (d && !document.getElementById("fc-custom-fonts-style")) {
+            var e = document.createElement("style");
+            ((e.id = "fc-custom-fonts-style"),
+              (e.type = "text/css"),
+              (e.innerText = d),
+              document.head
+                ? document.head.appendChild(e)
+                : document.documentElement.appendChild(e));
+          }
         }
-      }
-      (x.sort(function (a, b) {
-        return a.name.toLowerCase() > b.name.toLowerCase() ? 1 : -1;
-      }),
-        x.forEach(function (b) {
+        c.sort(function (a, b) {
+          return a.name.toLowerCase() > b.name.toLowerCase() ? 1 : -1;
+        });
+        c.forEach(function (b) {
           var c = $("<option>" + b.name + "</option>");
           (c.data("type", b.type), a.append(c));
-        }),
+        });
         a.select2({
           placeholder: "Select a Font",
-        }));
+        });
+      };
+    chrome.storage.local.get(["custom_fonts", "google_fonts_api_key"], function (b) {
+      y = b && b.custom_fonts ? b.custom_fonts : {};
+      ak(b && b.google_fonts_api_key, function (a) {
+        al(a);
+      });
     }),
       e.select2(),
       c.select2(),
       chrome.runtime.sendMessage({ msg: "getActiveTab" }, function (tabs) {
-        // REMAKE THIS
-        var i = tabs.tab;
-        if (i && i.url) {
-          var domain = i.url.match(/:\/\/(.[^\/]+)/);
-          if (domain && domain[1]) {
-            $(".domain").html("Font Settings for<br />" + domain[1] + ":");
-          } else {
-            console.error("Unable to extract domain from URL.");
-          }
+        var activeTab = tabs && tabs.tab ? tabs.tab : null,
+          domain = ab(activeTab);
+        if (domain) {
+          $(".domain").html("Font Settings for<br />" + domain + ":");
         } else {
           console.error("Tab or URL is undefined.");
         }
@@ -22003,8 +22070,7 @@ var googlefonts = {
         j.type = a;
         var b = ad(a);
         if (!aa) {
-          o(b);
-          l();
+          ag(b);
         }
       }),
       f.change(function () {
@@ -22013,8 +22079,7 @@ var googlefonts = {
           $(this).attr("checked")
             ? ((a.font_weight = e.val()), e.select2("enable"))
             : ((a.font_weight = null), e.select2("disable")),
-          o(a),
-          l());
+          ag(a));
       }),
       e.bind("enabled", function () {
         f.click();
@@ -22025,8 +22090,7 @@ var googlefonts = {
           $(this).attr("checked")
             ? ((a.font_style = c.val()), c.select2("enable"))
             : ((a.font_style = null), c.select2("disable")),
-          o(a),
-          l());
+          ag(a));
       }),
       c.bind("enabled", function () {
         d.click();
@@ -22040,8 +22104,7 @@ var googlefonts = {
           $(this).attr("checked")
             ? ((b[a[0].id] = a.val()), a.removeAttr("disabled"))
             : ((b[a[0].id] = ""), a.attr("disabled", "disabled")),
-          o(b),
-          l());
+          ag(b));
       }),
       $(".enable-select").change(function () {
         var b = null;
@@ -22059,28 +22122,25 @@ var googlefonts = {
                 type: null,
               }),
               a.select2("disable")),
-          o(b),
-          l());
+          ag(b));
       }),
       c.change(function () {
         var a = null;
         ((a = "global" === j.type ? k : j),
           (a.font_style = $(this).val()),
-          o(a),
-          l());
+          ag(a));
       }),
       e.change(function () {
         var a = null;
         ((a = "global" === j.type ? k : j),
           (a.font_weight = $(this).val()),
-          o(a),
-          l());
+          ag(a));
       }),
       g.keyup(function () {
         var a = null;
         a = "global" === j.type ? k : j;
         var b = parseFloat($(this).val());
-        ((a.font_size = b), $(this).val(b), o(a), l());
+        ((a.font_size = b), $(this).val(b), ag(a));
       }),
       a.bind("enabled", function () {
         $(".enable-select").click();
@@ -22092,12 +22152,13 @@ var googlefonts = {
         ((b.font_family.name = c),
           (b.font_family.type = a.find("option:selected").data("type")),
           "custom" === b.font_family.type && (b.font_family.url = y[c]),
-          o(b),
-          l());
+          ag(b));
       }),
       $(".done").click(function () {
+        var a = "global" === j.type ? k : "custom" === j.type ? j : {};
+        ah(a);
         window.close();
-      }));
+      });
   }),
   !(function (a) {
     var b = function (a, b) {
