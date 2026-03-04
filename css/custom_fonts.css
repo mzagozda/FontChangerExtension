@@ -2,6 +2,19 @@
   box-sizing: border-box;
 }
 
+:root {
+  --fc-bg: #f6f7fb;
+  --fc-surface: #ffffff;
+  --fc-text: #111827;
+  --fc-text-soft: #334155;
+  --fc-border: #c4cad6;
+  --fc-border-soft: #d8dce5;
+  --fc-accent: #374151;
+  --fc-accent-soft: rgba(55, 65, 81, 0.2);
+  --fc-accent-hover: #1f2937;
+  --fc-accent-active: #111827;
+}
+
 html,
 body {
   margin: 0;
@@ -9,8 +22,8 @@ body {
 }
 
 body {
-  background: #f6f7fb;
-  color: #111827;
+  background: var(--fc-bg);
+  color: var(--fc-text);
   font:
     14px/1.45 "Segoe UI",
     Tahoma,
@@ -27,7 +40,7 @@ body {
 h1,
 h2 {
   margin: 0 0 10px;
-  color: #0f172a;
+  color: var(--fc-text);
 }
 
 h1 {
@@ -35,20 +48,24 @@ h1 {
 }
 
 h2 {
-  margin-top: 18px;
+  margin-top: 0;
   font-size: 22px;
+}
+
+.panel + h2 {
+  margin-top: 18px;
 }
 
 .panel {
   padding: 14px;
-  border: 1px solid #d8dce5;
+  border: 1px solid var(--fc-border-soft);
   border-radius: 10px;
-  background: #ffffff;
+  background: var(--fc-surface);
 }
 
 .lead {
   margin: 0 0 14px;
-  color: #334155;
+  color: var(--fc-text-soft);
 }
 
 .field {
@@ -74,11 +91,22 @@ h2 {
 input[type="text"],
 select {
   width: 100%;
-  border: 1px solid #c4cad6;
+  border: 1px solid var(--fc-border);
   border-radius: 6px;
-  background: #ffffff;
-  color: #111827;
+  background: var(--fc-surface);
+  color: var(--fc-text);
   font: inherit;
+}
+
+select:not([multiple]) {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  padding-right: 28px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 12px 12px;
 }
 
 select {
@@ -87,8 +115,15 @@ select {
 }
 
 select:focus {
-  border-color: #2563eb;
-  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+  border-color: var(--fc-accent);
+  box-shadow: 0 0 0 2px var(--fc-accent-soft);
+  outline: none;
+}
+
+select:not([multiple]):focus,
+select:not([multiple]):focus-visible {
+  border-color: var(--fc-accent);
+  box-shadow: 0 0 0 2px var(--fc-accent-soft);
   outline: none;
 }
 
@@ -100,10 +135,10 @@ select:focus {
   height: 30px;
   line-height: 30px;
   padding-left: 8px;
-  border: 1px solid #c4cad6;
+  border: 1px solid var(--fc-border);
   border-radius: 6px;
-  background: #ffffff;
-  color: #111827;
+  background: var(--fc-surface);
+  color: var(--fc-text);
   box-shadow: none;
 }
 
@@ -113,7 +148,7 @@ select:focus {
 
 .page-wrap .select2-container .select2-choice div {
   width: 24px;
-  border-left: 1px solid #c4cad6;
+  border-left: 1px solid var(--fc-border);
   border-radius: 0 6px 6px 0;
   background: #f8fafc;
 }
@@ -124,12 +159,12 @@ select:focus {
 
 .page-wrap .select2-container-active .select2-choice,
 .page-wrap .select2-container-active .select2-choices {
-  border-color: #2563eb;
-  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+  border-color: var(--fc-accent);
+  box-shadow: 0 0 0 2px var(--fc-accent-soft);
 }
 
 .page-wrap .select2-drop {
-  border: 1px solid #c4cad6;
+  border: 1px solid var(--fc-border);
   border-top: 0;
   border-radius: 0 0 6px 6px;
   box-shadow: 0 8px 14px rgba(15, 23, 42, 0.12);
@@ -140,10 +175,10 @@ select:focus {
 }
 
 .page-wrap .select2-search input {
-  border: 1px solid #c4cad6;
+  border: 1px solid var(--fc-border);
   border-radius: 6px;
   padding: 6px 24px 6px 8px;
-  background-color: #ffffff;
+  background-color: var(--fc-surface);
 }
 
 .page-wrap .select2-results {
@@ -157,8 +192,57 @@ select:focus {
 }
 
 .page-wrap .select2-results .select2-highlighted {
-  background: #2563eb;
-  color: #ffffff;
+  background: var(--fc-accent);
+  color: var(--fc-surface);
+}
+
+.page-wrap .select2-results .select2-highlighted .select2-result-label {
+  background: var(--fc-accent);
+  color: var(--fc-surface);
+}
+
+.select2-results .select2-highlighted,
+.select2-results .select2-highlighted .select2-result-label {
+  background: var(--fc-accent) !important;
+  color: var(--fc-surface) !important;
+}
+
+.select2-container-active .select2-choice,
+.select2-container-active .select2-choices {
+  border-color: var(--fc-accent) !important;
+  box-shadow: 0 0 0 2px var(--fc-accent-soft) !important;
+}
+
+.select2-dropdown-open .select2-choice {
+  border-color: var(--fc-border) !important;
+  border-bottom-color: transparent !important;
+  background: var(--fc-surface) !important;
+  background-image: none !important;
+}
+
+select option:checked,
+select option:hover,
+select:focus option:checked {
+  background: linear-gradient(var(--fc-accent), var(--fc-accent));
+  color: var(--fc-surface);
+}
+
+select[multiple] option:checked,
+select[multiple] option:hover,
+select[multiple]:focus option:checked {
+  background: linear-gradient(var(--fc-accent), var(--fc-accent));
+  color: var(--fc-surface);
+  box-shadow: inset 0 0 0 9999px var(--fc-accent);
+  -webkit-text-fill-color: var(--fc-surface);
+}
+
+select:not([multiple]) option:checked,
+select:not([multiple]) option:hover,
+select:not([multiple]):focus option:checked {
+  background-color: var(--fc-accent) !important;
+  background-image: none !important;
+  color: var(--fc-surface) !important;
+  -webkit-text-fill-color: var(--fc-surface);
 }
 
 input[type="text"] {
@@ -202,7 +286,7 @@ input[type="text"] {
 }
 
 .drop-zone-text span {
-  color: #1d4ed8;
+  color: var(--fc-accent);
 }
 
 .file-name {
@@ -220,10 +304,10 @@ input[type="text"] {
 
 button {
   height: 34px;
-  border: 1px solid #1d4ed8;
+  border: 1px solid var(--fc-accent);
   border-radius: 8px;
-  background: #2563eb;
-  color: #ffffff;
+  background: var(--fc-accent);
+  color: var(--fc-surface);
   font: inherit;
   font-weight: 600;
   cursor: pointer;
@@ -231,11 +315,11 @@ button {
 }
 
 button:hover {
-  background: #1d4ed8;
+  background: var(--fc-accent-hover);
 }
 
 button:active {
-  background: #1e40af;
+  background: var(--fc-accent-active);
 }
 
 .saved-row {

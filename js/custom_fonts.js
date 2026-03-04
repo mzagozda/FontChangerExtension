@@ -1,499 +1,879 @@
 !(function () {
-  function a() {
-    var a = h("#file"),
-      i = h("#file-drop-zone");
-    (a.addEventListener("change", function () {
-      j(this.files && this.files[0] ? this.files[0] : null);
-    }),
-      ["dragenter", "dragover"].forEach(function (a) {
-        i.addEventListener(a, function (a) {
-          (a.preventDefault(),
-            a.stopPropagation(),
-            i.classList.add("dragover"));
-        });
-      }),
-      ["dragleave", "dragend"].forEach(function (a) {
-        i.addEventListener(a, function (a) {
-          (a.preventDefault(),
-            a.stopPropagation(),
-            i.classList.remove("dragover"));
-        });
-      }),
-      i.addEventListener("drop", function (b) {
-        (b.preventDefault(),
-          b.stopPropagation(),
-          this.classList.remove("dragover"));
-        var c =
-          b.dataTransfer && b.dataTransfer.files
-            ? b.dataTransfer.files[0]
-            : null;
-        if (!c) return;
-        try {
-          var d = new DataTransfer();
-          (d.items.add(c), (a.files = d.files));
-        } catch (a) {}
-        j(c);
-      }),
-      h("#save-font").addEventListener("click", function () {
-        var a = h("#font-name").value.trim(),
-          c = f || (h("#file").files && h("#file").files[0]);
-        if (!a) return void alert("Please type a name.");
-        if (e[a]) return void alert('File name "' + a + '" is already in use.');
-        if (!c) return void alert("Please select a file.");
-        var d = k(c.name);
-        return d
-          ? ((g = d), (f = c), void b(f, a, g))
-          : void alert("Please select a file.");
-      }),
-      h("#delete-font").addEventListener("click", function () {
-        var a = t("#saved-fonts option");
-        a &&
-          (a.forEach(function (a) {
-            if (a.selected) {
-              var b = a.textContent;
-              (delete e[b], a.parentNode.removeChild(a));
-            }
-          }),
-          chrome.storage.local.set({ custom_fonts: e }));
-      }),
-      h("#save-profile") &&
-        h("#save-profile").addEventListener("click", function () {
-          var a = n(h("#profile-domain").value),
-            b = h("#font_family"),
-            c = b ? b.value : "",
-            d = b ? b.options[b.selectedIndex] : null,
-            f = d ? d.getAttribute("data-type") || "standard" : "standard",
-            g = h("#profile-font-weight")
-              ? h("#profile-font-weight").value
-              : "",
-            i = h("#profile-font-style") ? h("#profile-font-style").value : "",
-            j = h("#profile-font-size")
-              ? h("#profile-font-size").value.trim()
-              : "",
-            k = null;
-          if (!a) return void alert("Please enter a valid domain.");
-          if (!c) return void alert("Please select a font family.");
-          if (j) {
-            k = parseFloat(j);
-            if (isNaN(k)) return void alert("Font size must be a number.");
-          }
-          var l = {
-            font_family: {
-              name: c,
-              type: f,
-            },
-            font_weight: g || null,
-            font_style: i || null,
-            font_size: k,
-          };
-          if ("custom" === f) {
-            if (!e[c]) return void alert("Selected custom font was not found.");
-            l.font_family.url = e[c];
-          }
-          ((p[a] = {
-            domain: a,
-            style: l,
-          }),
-            chrome.storage.local.set({ profiles: p }, function () {
-              chrome.runtime.lastError
-                ? alert("Unable to save profile. Please try again.")
-                : (console.log("[FontChanger] Profile saved:", a),
-                  m(),
-                  o(),
-                  r());
-            }));
-        }),
-      h("#delete-profile") &&
-        h("#delete-profile").addEventListener("click", function () {
-          var a = t("#saved-profiles option");
-          if (!a) return;
-          (a.forEach(function (a) {
-            a.selected && delete p[a.value];
-          }),
-            chrome.storage.local.set({ profiles: p }, function () {
-              console.log("[FontChanger] Profile(s) deleted");
-              m(), r();
-            }));
-        }));
+  var STANDARD_FONTS = [
+    "Arial",
+    "Arial Black",
+    "Verdana",
+    "Geneva",
+    "Helvetica",
+    "Impact",
+    "Helvetica Neue",
+    "Sans-serif",
+    "Georgia",
+    "Lucida Console",
+    "Times New Roman",
+    "Times",
+    "Serif",
+    "Courier New",
+    "Comic Sans MS",
+    "Courier",
+    "Monospace",
+    "Lucida Sans Unicode",
+    "Tahoma",
+    "Trebuchet MS",
+    "Palatino Linotype",
+  ];
+
+  var PREVIEW_VISIBLE_DELAY = 1000;
+  var MAX_PENDING_PREVIEW_TIMERS = 40;
+  var PREVIEW_BATCH_SIZE = 12;
+
+  var customFonts = {};
+  var profiles = {};
+  var selectedFile = null;
+
+  var googleFontsCache = null;
+  var googleFontsLoading = null;
+
+  var previewLoadedFamilies = {};
+  var previewQueue = [];
+  var previewQueueTimer = null;
+  var previewPendingTimers = {};
+  var previewPendingSince = {};
+  var previewKnownGoogleFamilies = {};
+  var previewScrollTick = null;
+
+  function qs(selector) {
+    return document.querySelector(selector);
   }
-  function b(a, b, f) {
-    var g = new FileReader();
-    ((g.onloadend = function () {
-      var g = this.result,
-        h = "font/truetype";
-      (".woff" === f
-        ? (h = "font/woff")
-        : ".otf" === f && (h = "font/opentype"),
-        (e[b] = "data:" + h + ";base64," + g.replace(/data:.*?;base64,/, "")),
-        chrome.storage.local.set({ custom_fonts: e }, function () {
-          chrome.runtime.lastError
-            ? alert("Unable to save font. Please try again.")
-            : (c(), d());
-        }));
-    }),
-      g.readAsDataURL(a, "UTF-8"));
+
+  function qsa(selector) {
+    return Array.prototype.slice.call(document.querySelectorAll(selector));
   }
-  function c() {
-    var a = document.createDocumentFragment();
-    Object.keys(e).forEach(function (b) {
-      var c = document.createElement("option");
-      ((c.textContent = b), (c.value = e[b]), a.appendChild(c));
-    });
-    var b = h("#saved-fonts");
-    ((b.innerHTML = ""), b.appendChild(a), l());
+
+  function normalizeName(name) {
+    return (name || "").trim().toLowerCase().replace(/\s+/g, " ");
   }
-  function d() {
-    ((h("#font-name").value = ""),
-      (h("#file").value = ""),
-      (h("#file-name").textContent = "No file selected"),
-      h("#file-drop-zone").classList.remove("has-file"),
-      (f = null));
+
+  function getFileExt(fileName) {
+    var match = fileName && fileName.match(/\.[a-zA-Z0-9]+$/);
+    var ext = match ? match[0].toLowerCase() : "";
+    return ext === ".ttf" || ext === ".otf" || ext === ".woff" ? ext : null;
   }
-  function j(a) {
-    if (!a) return;
-    var c = k(a.name),
-      d = !!c;
-    d
-      ? ((g = c),
-        (f = a),
-        (h("#font-name").value = a.name.substring(0, a.name.lastIndexOf("."))),
-        (h("#file-name").textContent = a.name),
-        h("#file-drop-zone").classList.add("has-file"))
-      : ((f = null),
-        (h("#file").value = ""),
-        (h("#file-name").textContent = "No file selected"),
-        h("#file-drop-zone").classList.remove("has-file"),
-        alert("Font must be of type .ttf, .otf or .woff"));
+
+  function normalizeDomain(domain) {
+    if (!domain) return "";
+    var value = domain.trim().toLowerCase();
+    if (!value) return "";
+    value = value.replace(/^https?:\/\//, "");
+    value = value.replace(/\/.*$/, "");
+    return value.replace(/^www\./, "");
   }
-  function k(a) {
-    var b = a && a.match(/\.[a-zA-Z0-9]+$/),
-      c = b ? b[0].toLowerCase() : "";
-    return ".ttf" === c || ".otf" === c || ".woff" === c ? c : null;
-  }
-  function u(a) {
-    if (a && Array.isArray(a.items)) {
-      return a.items
-        .map(function (a) {
-          return a && a.family
-            ? {
-                name: a.family,
-                type: "google",
-              }
+
+  function parseGoogleFontsItems(payload) {
+    if (payload && Array.isArray(payload.items)) {
+      return payload.items
+        .map(function (item) {
+          return item && item.family
+            ? { name: item.family, type: "google" }
             : null;
         })
-        .filter(function (a) {
-          return !!a;
-        });
+        .filter(Boolean);
     }
     return [];
   }
-  function v(a) {
-    if (!a) return [];
-    var b = a;
-    if ("string" === typeof b) {
-      b = b.replace(/^\)\]\}'\n?/, "");
+
+  function parseGoogleMetadata(rawText) {
+    if (!rawText) return [];
+    var text = rawText;
+    if (typeof text === "string") {
+      text = text.replace(/^\)\]\}'\n?/, "");
       try {
-        b = JSON.parse(b);
-      } catch (a) {
+        text = JSON.parse(text);
+      } catch (e) {
         return [];
       }
     }
-    var c = b && Array.isArray(b.familyMetadataList) ? b.familyMetadataList : [];
-    return c
-      .map(function (a) {
-        return a && a.family
-          ? {
-              name: a.family,
-              type: "google",
-            }
+    var list = text && Array.isArray(text.familyMetadataList)
+      ? text.familyMetadataList
+      : [];
+    return list
+      .map(function (item) {
+        return item && item.family
+          ? { name: item.family, type: "google" }
           : null;
       })
-      .filter(function (a) {
-        return !!a;
+      .filter(Boolean);
+  }
+
+  function getBundledGoogleFontsFallback() {
+    return parseGoogleFontsItems(window.googlefonts || null);
+  }
+
+  function loadGoogleFonts(callback) {
+    if (Array.isArray(googleFontsCache)) {
+      callback(googleFontsCache);
+      return;
+    }
+
+    if (googleFontsLoading) {
+      googleFontsLoading.push(callback);
+      return;
+    }
+
+    googleFontsLoading = [callback];
+
+    var fallback = getBundledGoogleFontsFallback();
+
+    function resolve(fonts) {
+      googleFontsCache = fonts && fonts.length ? fonts : fallback;
+      var waiters = googleFontsLoading.slice();
+      googleFontsLoading = null;
+      waiters.forEach(function (fn) {
+        fn(googleFontsCache);
       });
-  }
-  function B() {
-    var a = previewQueue.splice(0, 12);
-    if (!a.length) {
-      previewTimer = null;
-      return;
     }
-    var b = document.createElement("link");
-    ((b.rel = "stylesheet"),
-      (b.type = "text/css"),
-      (b.href =
-        "https://fonts.googleapis.com/css?family=" +
-        a.map(function (a) {
-          return a.replace(/\s/g, "+");
-        }).join("|") +
-        "&display=swap"),
-      document.head
-        ? document.head.appendChild(b)
-        : document.documentElement.appendChild(b));
-    if (previewQueue.length) {
-      previewTimer = setTimeout(B, 80);
-    } else {
-      previewTimer = null;
-    }
-  }
-  function C(a) {
-    if (!a || previewLoadedFamilies[a]) {
-      return;
-    }
-    previewLoadedFamilies[a] = !0;
-    previewQueue.push(a);
-    if (previewTimer) {
-      return;
-    }
-    previewTimer = setTimeout(B, 80);
-  }
-  function w(a) {
-    if (Array.isArray(q)) {
-      a(q);
-      return;
-    }
-    if (s) {
-      s.push(a);
-      return;
-    }
-    s = [a];
-    var b = u(window.googlefonts),
-      c = function (a) {
-        q = a && a.length ? a : b;
-        var c = s.slice();
-        s = null;
-        c.forEach(function (a) {
-          a(q);
+
+    function loadFromMetadata() {
+      fetch("https://fonts.google.com/metadata/fonts")
+        .then(function (response) {
+          if (!response.ok) throw new Error("metadata failed");
+          return response.text();
+        })
+        .then(function (text) {
+          resolve(parseGoogleMetadata(text));
+        })
+        .catch(function () {
+          resolve(fallback);
         });
-      },
-      d = function () {
-        fetch("https://fonts.google.com/metadata/fonts")
-          .then(function (a) {
-            if (!a.ok) throw new Error("Failed to fetch Google metadata");
-            return a.text();
-          })
-          .then(function (a) {
-            c(v(a));
-          })
-          .catch(function () {
-            c(b);
-          });
-      };
-    chrome.storage.local.get("google_fonts_api_key", function (a) {
-      var e = a && a.google_fonts_api_key;
-      if (!e) {
-        d();
+    }
+
+    chrome.storage.local.get("google_fonts_api_key", function (data) {
+      var apiKey = data && data.google_fonts_api_key;
+      if (!apiKey) {
+        loadFromMetadata();
         return;
       }
       fetch(
         "https://www.googleapis.com/webfonts/v1/webfonts?sort=alpha&key=" +
-          encodeURIComponent(e),
+          encodeURIComponent(apiKey),
       )
-        .then(function (a) {
-          if (!a.ok) throw new Error("Failed to fetch Google Fonts API");
-          return a.json();
+        .then(function (response) {
+          if (!response.ok) throw new Error("api failed");
+          return response.json();
         })
-        .then(function (a) {
-          var e = u(a);
-          if (e.length) {
-            c(e);
+        .then(function (json) {
+          var parsed = parseGoogleFontsItems(json);
+          if (parsed.length) {
+            resolve(parsed);
             return;
           }
-          d();
+          loadFromMetadata();
         })
         .catch(function () {
-          d();
+          loadFromMetadata();
         });
     });
   }
-  function l() {
-    var a = h("#font_family") || h("#profile-font-family");
-    if (!a) return;
-    var D = function (a) {
-      if (!a) return "";
-      var b = a.text || "",
-        c = a.element ? window.jQuery(a.element) : window.jQuery(),
-        d = c.length ? c.data("type") : null,
-        e = b.replace(/'/g, "\\'");
-      if ("google" === d) {
-        C(b);
+
+  function flushPreviewQueue() {
+    var batch = previewQueue.splice(0, PREVIEW_BATCH_SIZE);
+    if (!batch.length) {
+      previewQueueTimer = null;
+      return;
+    }
+
+    var link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.type = "text/css";
+    link.href =
+      "https://fonts.googleapis.com/css?family=" +
+      batch
+        .map(function (name) {
+          return name.replace(/\s/g, "+");
+        })
+        .join("|") +
+      "&display=swap";
+
+    if (document.head) {
+      document.head.appendChild(link);
+    } else {
+      document.documentElement.appendChild(link);
+    }
+
+    if (previewQueue.length) {
+      previewQueueTimer = setTimeout(flushPreviewQueue, 80);
+    } else {
+      previewQueueTimer = null;
+    }
+  }
+
+  function enqueuePreviewFamily(family) {
+    if (!family || previewLoadedFamilies[family]) return;
+    previewLoadedFamilies[family] = true;
+    previewQueue.push(family);
+    if (!previewQueueTimer) {
+      previewQueueTimer = setTimeout(flushPreviewQueue, 80);
+    }
+  }
+
+  function trimPendingPreviewTimers() {
+    var keys = Object.keys(previewPendingTimers);
+    if (keys.length <= MAX_PENDING_PREVIEW_TIMERS) return;
+
+    keys.sort(function (a, b) {
+      return (previewPendingSince[a] || 0) - (previewPendingSince[b] || 0);
+    });
+
+    var extra = keys.length - MAX_PENDING_PREVIEW_TIMERS;
+    for (var i = 0; i < extra; i++) {
+      var key = keys[i];
+      clearTimeout(previewPendingTimers[key]);
+      delete previewPendingTimers[key];
+      delete previewPendingSince[key];
+    }
+  }
+
+  function getActiveResultsContainer() {
+    return (
+      document.querySelector(".select2-drop-active .select2-results") ||
+      document.querySelector(".select2-drop .select2-results")
+    );
+  }
+
+  function getVisibleGoogleFamilies() {
+    var container = getActiveResultsContainer();
+    if (!container) return [];
+
+    var containerRect = container.getBoundingClientRect();
+    var rows = container.querySelectorAll("li");
+    var seen = {};
+    var visible = [];
+
+    for (var i = 0; i < rows.length; i++) {
+      var row = rows[i];
+      var rowRect = row.getBoundingClientRect();
+      if (rowRect.bottom <= containerRect.top || rowRect.top >= containerRect.bottom) {
+        continue;
       }
-      return "<span style=\"font-family:'" + e + "',sans-serif;\">" + b + "</span>";
-    };
-    var b = [
-        "Arial",
-        "Arial Black",
-        "Verdana",
-        "Geneva",
-        "Helvetica",
-        "Impact",
-        "Helvetica Neue",
-        "Sans-serif",
-        "Georgia",
-        "Lucida Console",
-        "Times New Roman",
-        "Times",
-        "Serif",
-        "Courier New",
-        "Comic Sans MS",
-        "Courier",
-        "Monospace",
-        "Lucida Sans Unicode",
-        "Tahoma",
-        "Trebuchet MS",
-        "Palatino Linotype",
-      ];
-    var f = a.value || "";
-    w(function (c) {
-      var d = [];
-      (b.forEach(function (a) {
-        d.push({
-          name: a,
-          type: "standard",
+      var text = (row.textContent || "").trim();
+      if (!text) continue;
+      var key = normalizeName(text);
+      if (!previewKnownGoogleFamilies[key] || seen[key]) {
+        continue;
+      }
+      seen[key] = true;
+      visible.push(text);
+    }
+
+    return visible;
+  }
+
+  function schedulePreviewFamily(family) {
+    if (!family || previewLoadedFamilies[family] || previewPendingTimers[family]) {
+      return;
+    }
+
+    previewPendingSince[family] = Date.now();
+    previewPendingTimers[family] = setTimeout(function () {
+      delete previewPendingTimers[family];
+      var visible = getVisibleGoogleFamilies();
+      if (visible.indexOf(family) !== -1) {
+        enqueuePreviewFamily(family);
+      }
+      delete previewPendingSince[family];
+    }, PREVIEW_VISIBLE_DELAY);
+
+    trimPendingPreviewTimers();
+  }
+
+  function scheduleVisiblePreviewFamilies() {
+    var visible = getVisibleGoogleFamilies();
+    for (var i = 0; i < visible.length; i++) {
+      schedulePreviewFamily(visible[i]);
+    }
+  }
+
+  function bindPreviewWatchers(selectEl) {
+    var container = getActiveResultsContainer();
+    if (!container || !window.jQuery) return;
+
+    window
+      .jQuery(container)
+      .off("scroll.fontPreviewLazy")
+      .on("scroll.fontPreviewLazy", function () {
+        if (previewScrollTick) clearTimeout(previewScrollTick);
+        previewScrollTick = setTimeout(function () {
+          scheduleVisiblePreviewFamilies();
+        }, 120);
+      });
+
+    var searchInput = document.querySelector(
+      ".select2-drop-active .select2-input, .select2-drop .select2-input",
+    );
+    if (searchInput) {
+      window
+        .jQuery(searchInput)
+        .off("input.fontPreviewLazy keyup.fontPreviewLazy")
+        .on("input.fontPreviewLazy keyup.fontPreviewLazy", function () {
+          if (previewScrollTick) clearTimeout(previewScrollTick);
+          previewScrollTick = setTimeout(function () {
+            scheduleVisiblePreviewFamilies();
+          }, 120);
         });
-      }),
-        (c || []).forEach(function (a) {
-          a && a.name && d.push(a);
-        }),
-        Object.keys(e).forEach(function (a) {
-          d.push({
-            name: a,
-            type: "custom",
-          });
-        }));
-      var g = {},
-        h = document.createDocumentFragment();
-      (d.sort(function (a, b) {
+    }
+
+    var $select = window.jQuery(selectEl);
+    $select
+      .off("select2-open.fontPreviewLazy")
+      .on("select2-open.fontPreviewLazy", function () {
+        scheduleVisiblePreviewFamilies();
+        bindPreviewWatchers(selectEl);
+        preloadFirstGoogleOptions(selectEl, 20);
+        setTimeout(scheduleVisiblePreviewFamilies, 150);
+        setTimeout(scheduleVisiblePreviewFamilies, 450);
+        setTimeout(scheduleVisiblePreviewFamilies, 900);
+      });
+  }
+
+  function preloadFirstGoogleOptions(selectEl, limit) {
+    if (!selectEl || !selectEl.options) return;
+    var loaded = 0;
+    for (var i = 0; i < selectEl.options.length; i++) {
+      var option = selectEl.options[i];
+      if (!option) continue;
+      if (option.getAttribute("data-type") !== "google") continue;
+      var name = (option.textContent || option.value || "").trim();
+      if (!name) continue;
+      schedulePreviewFamily(name);
+      loaded++;
+      if (loaded >= limit) break;
+    }
+  }
+
+  function buildPreviewMarkup(item) {
+    if (!item) return "";
+    var text = item.text || "";
+    var $element = item.element ? window.jQuery(item.element) : window.jQuery();
+    var type = $element.length ? $element.data("type") : null;
+    var escaped = text.replace(/'/g, "\\'");
+    var key = encodeURIComponent(text);
+
+    if (type === "google") {
+      schedulePreviewFamily(text);
+    }
+
+    return (
+      "<span data-font-key=\"" +
+      key +
+      "\" style=\"font-family:'" +
+      escaped +
+      "',sans-serif;\">" +
+      text +
+      "</span>"
+    );
+  }
+
+  function renderFontFamilySelect() {
+    var select = qs("#font_family") || qs("#profile-font-family");
+    if (!select) return;
+
+    var selected = select.value || "";
+
+    loadGoogleFonts(function (googleFamilies) {
+      previewKnownGoogleFamilies = {};
+      googleFamilies.forEach(function (item) {
+        if (item && item.name) {
+          previewKnownGoogleFamilies[normalizeName(item.name)] = true;
+        }
+      });
+
+      var items = [];
+      STANDARD_FONTS.forEach(function (name) {
+        items.push({ name: name, type: "standard" });
+      });
+      googleFamilies.forEach(function (item) {
+        if (item && item.name) items.push(item);
+      });
+      Object.keys(customFonts).forEach(function (name) {
+        items.push({ name: name, type: "custom" });
+      });
+
+      items.sort(function (a, b) {
         return a.name.toLowerCase() > b.name.toLowerCase() ? 1 : -1;
-      }),
-        d.forEach(function (a) {
-          if (g[a.name]) return;
-          g[a.name] = !0;
-          var b = document.createElement("option");
-          ((b.value = a.name),
-            (b.textContent = a.name),
-            b.setAttribute("data-type", a.type),
-            h.appendChild(b));
-        }),
-        (a.innerHTML = ""),
-        a.appendChild(h),
-        f &&
-          Array.prototype.slice.call(a.options).some(function (b) {
-            return b.value === f ? ((a.value = f), !0) : !1;
-          }));
+      });
+
+      var seen = {};
+      var fragment = document.createDocumentFragment();
+
+      items.forEach(function (item) {
+        if (!item || !item.name) return;
+        if (seen[item.name]) return;
+        seen[item.name] = true;
+        var option = document.createElement("option");
+        option.value = item.name;
+        option.textContent = item.name;
+        option.setAttribute("data-type", item.type);
+        fragment.appendChild(option);
+      });
+
+      select.innerHTML = "";
+      select.appendChild(fragment);
+
+      if (selected) {
+        Array.prototype.some.call(select.options, function (opt) {
+          if (opt.value === selected) {
+            select.value = selected;
+            return true;
+          }
+          return false;
+        });
+      }
+
       if (window.jQuery && jQuery.fn && jQuery.fn.select2) {
-        var i = jQuery(a);
-        (i.data("select2") && i.select2("destroy"),
-          i.select2({
-            placeholder: "Select a Font",
-            escapeMarkup: function (a) {
-              return a;
-            },
-            formatResult: D,
-            formatSelection: D,
-          }),
-          i.select2("enable", !0),
-          i.off("change.profileType"));
+        var $select = jQuery(select);
+        if ($select.data("select2")) {
+          $select.select2("destroy");
+        }
+        $select.select2({
+          placeholder: "Select a Font",
+          escapeMarkup: function (markup) {
+            return markup;
+          },
+          formatResult: buildPreviewMarkup,
+          formatSelection: buildPreviewMarkup,
+        });
+        $select.select2("enable", true);
+        $select.off("change.profileType");
+        bindPreviewWatchers(select);
       }
     });
   }
-  function m() {
-    var a = h("#saved-profiles");
-    if (!a) return;
-    var b = document.createDocumentFragment();
-    Object.keys(p)
-      .sort()
-      .forEach(function (a) {
-        var c = p[a],
-          d = c && c.style ? c.style : {},
-          e = d.font_family && d.font_family.name ? d.font_family.name : "-",
-          f = d.font_weight ? ", w:" + d.font_weight : "",
-          g = d.font_style ? ", s:" + d.font_style : "",
-          i = d.font_size ? ", size:" + d.font_size + "px" : "",
-          j = document.createElement("option");
-        ((j.value = a),
-          (j.textContent = a + " -> " + e + f + g + i),
-          b.appendChild(j));
+
+  function initProfileStyleWeightSelects() {
+    if (!(window.jQuery && jQuery.fn && jQuery.fn.select2)) {
+      return;
+    }
+
+    function buildWeightMarkup(item) {
+      if (!item) return "";
+      var text = item.text || "";
+      var weight = ((item.id || "") + "").toLowerCase();
+      if (!weight) {
+        weight = text.toLowerCase();
+      }
+      if (weight === "default") {
+        weight = "normal";
+      }
+      return (
+        '<span style="font-family:Arial,sans-serif;font-weight:' +
+        weight +
+        ';">' +
+        text +
+        "</span>"
+      );
+    }
+
+    function buildStyleMarkup(item) {
+      if (!item) return "";
+      var text = item.text || "";
+      var style = ((item.id || "") + "").toLowerCase();
+      if (!style) {
+        style = text.toLowerCase();
+      }
+      if (style === "default") {
+        style = "normal";
+      }
+      return (
+        '<span style="font-family:Arial,sans-serif;font-style:' +
+        style +
+        ';">' +
+        text +
+        "</span>"
+      );
+    }
+
+    ["#profile-font-weight", "#profile-font-style"].forEach(function (selector) {
+      var el = qs(selector);
+      if (!el) return;
+
+      var $el = jQuery(el);
+      if ($el.data("select2")) {
+        $el.select2("destroy");
+      }
+
+      $el.select2({
+        minimumResultsForSearch: -1,
+        escapeMarkup: function (markup) {
+          return markup;
+        },
+        formatResult:
+          selector === "#profile-font-weight"
+            ? buildWeightMarkup
+            : buildStyleMarkup,
+        formatSelection:
+          selector === "#profile-font-weight"
+            ? buildWeightMarkup
+            : buildStyleMarkup,
       });
-    ((a.innerHTML = ""), a.appendChild(b));
+      $el.select2("enable", true);
+    });
   }
-  function n(a) {
-    if (!a) return "";
-    var b = a.trim().toLowerCase();
-    if (!b) return "";
-    ((b = b.replace(/^https?:\/\//, "")), (b = b.replace(/\/.*$/, "")));
-    return b.replace(/^www\./, "");
+
+  function renderSavedFonts() {
+    var select = qs("#saved-fonts");
+    if (!select) return;
+
+    var fragment = document.createDocumentFragment();
+    Object.keys(customFonts).forEach(function (name) {
+      var option = document.createElement("option");
+      option.textContent = name;
+      option.value = customFonts[name];
+      fragment.appendChild(option);
+    });
+
+    select.innerHTML = "";
+    select.appendChild(fragment);
+    renderFontFamilySelect();
   }
-  function o() {
-    h("#profile-domain") && (h("#profile-domain").value = "");
-    h("#profile-font-weight") && (h("#profile-font-weight").value = "");
-    h("#profile-font-style") && (h("#profile-font-style").value = "");
-    h("#profile-font-size") && (h("#profile-font-size").value = "");
+
+  function renderProfiles() {
+    var select = qs("#saved-profiles");
+    if (!select) return;
+
+    var fragment = document.createDocumentFragment();
+    Object.keys(profiles)
+      .sort()
+      .forEach(function (domain) {
+        var profile = profiles[domain];
+        var style = profile && profile.style ? profile.style : {};
+        var family = style.font_family && style.font_family.name ? style.font_family.name : "-";
+        var weight = style.font_weight ? ", w:" + style.font_weight : "";
+        var fontStyle = style.font_style ? ", s:" + style.font_style : "";
+        var size = style.font_size ? ", size:" + style.font_size + "px" : "";
+
+        var option = document.createElement("option");
+        option.value = domain;
+        option.textContent = domain + " -> " + family + weight + fontStyle + size;
+        fragment.appendChild(option);
+      });
+
+    select.innerHTML = "";
+    select.appendChild(fragment);
   }
-  function r() {
-    chrome.tabs &&
-      chrome.tabs.query({}, function (a) {
-        if (!a || !a.length) return;
-        a.forEach(function (a) {
-          a &&
-            a.id &&
-            chrome.tabs.sendMessage(
-              a.id,
-              {
-                msg: "style",
-                value: null,
-              },
-              function () {
-                if (chrome.runtime.lastError) {
-                  if (
-                    chrome.scripting &&
-                    a.url &&
-                    /^https?:\/\//.test(a.url)
-                  ) {
-                    chrome.scripting.executeScript(
-                      {
-                        target: { tabId: a.id, allFrames: !0 },
-                        files: ["js/cs.js"],
-                      },
-                      function () {
-                        chrome.tabs.sendMessage(
-                          a.id,
-                          {
-                            msg: "style",
-                            value: null,
-                          },
-                          function () {},
-                        );
-                      },
-                    );
-                  }
-                }
-              },
-            );
+
+  function resetFileForm() {
+    var nameInput = qs("#font-name");
+    var fileInput = qs("#file");
+    var fileName = qs("#file-name");
+    var dropZone = qs("#file-drop-zone");
+
+    if (nameInput) nameInput.value = "";
+    if (fileInput) fileInput.value = "";
+    if (fileName) fileName.textContent = "No file selected";
+    if (dropZone) dropZone.classList.remove("has-file");
+    selectedFile = null;
+  }
+
+  function updateSelectedFile(file) {
+    if (!file) return;
+    var ext = getFileExt(file.name);
+    var nameInput = qs("#font-name");
+    var fileName = qs("#file-name");
+    var dropZone = qs("#file-drop-zone");
+    var fileInput = qs("#file");
+
+    if (!ext) {
+      selectedFile = null;
+      if (fileInput) fileInput.value = "";
+      if (fileName) fileName.textContent = "No file selected";
+      if (dropZone) dropZone.classList.remove("has-file");
+      alert("Font must be of type .ttf, .otf or .woff");
+      return;
+    }
+
+    selectedFile = file;
+    if (nameInput) {
+      var dot = file.name.lastIndexOf(".");
+      nameInput.value = dot > 0 ? file.name.substring(0, dot) : file.name;
+    }
+    if (fileName) fileName.textContent = file.name;
+    if (dropZone) dropZone.classList.add("has-file");
+  }
+
+  function saveSelectedFont() {
+    var nameInput = qs("#font-name");
+    var fileInput = qs("#file");
+    var fontName = nameInput ? nameInput.value.trim() : "";
+    var file = selectedFile || (fileInput && fileInput.files ? fileInput.files[0] : null);
+
+    if (!fontName) {
+      alert("Please type a name.");
+      return;
+    }
+    if (customFonts[fontName]) {
+      alert('File name "' + fontName + '" is already in use.');
+      return;
+    }
+    if (!file) {
+      alert("Please select a file.");
+      return;
+    }
+
+    var ext = getFileExt(file.name);
+    if (!ext) {
+      alert("Please select a file.");
+      return;
+    }
+
+    var reader = new FileReader();
+    reader.onloadend = function () {
+      var result = this.result;
+      var mime = "font/truetype";
+      if (ext === ".woff") mime = "font/woff";
+      if (ext === ".otf") mime = "font/opentype";
+
+      customFonts[fontName] = "data:" + mime + ";base64," + result.replace(/data:.*?;base64,/, "");
+      chrome.storage.local.set({ custom_fonts: customFonts }, function () {
+        if (chrome.runtime.lastError) {
+          alert("Unable to save font. Please try again.");
+          return;
+        }
+        renderSavedFonts();
+        resetFileForm();
+      });
+    };
+    reader.readAsDataURL(file, "UTF-8");
+  }
+
+  function deleteSelectedFonts() {
+    var options = qsa("#saved-fonts option");
+    options.forEach(function (option) {
+      if (option.selected) {
+        delete customFonts[option.textContent];
+        if (option.parentNode) option.parentNode.removeChild(option);
+      }
+    });
+    chrome.storage.local.set({ custom_fonts: customFonts });
+    renderFontFamilySelect();
+  }
+
+  function clearProfileInputs() {
+    var domain = qs("#profile-domain");
+    var weight = qs("#profile-font-weight");
+    var style = qs("#profile-font-style");
+    var size = qs("#profile-font-size");
+    if (domain) domain.value = "";
+    if (weight) weight.value = "";
+    if (style) style.value = "";
+    if (size) size.value = "";
+  }
+
+  function refreshTabsStyles() {
+    if (!(chrome && chrome.tabs && chrome.tabs.query)) {
+      return;
+    }
+
+    chrome.tabs.query({}, function (tabs) {
+      if (!tabs || !tabs.length) return;
+
+      tabs.forEach(function (tab) {
+        if (!(tab && tab.id && chrome.tabs && chrome.tabs.sendMessage)) {
+          return;
+        }
+
+        chrome.tabs.sendMessage(
+          tab.id,
+          { msg: "style", value: null },
+          function () {
+            if (!chrome.runtime.lastError) return;
+
+            if (
+              chrome.scripting &&
+              chrome.scripting.executeScript &&
+              tab.url &&
+              /^https?:\/\//.test(tab.url)
+            ) {
+              chrome.scripting.executeScript(
+                {
+                  target: { tabId: tab.id, allFrames: true },
+                  files: ["js/cs.js"],
+                },
+                function () {
+                  if (!(chrome.tabs && chrome.tabs.sendMessage)) return;
+                  chrome.tabs.sendMessage(
+                    tab.id,
+                    { msg: "style", value: null },
+                    function () {
+                      if (chrome.runtime.lastError) {
+                        return;
+                      }
+                    },
+                  );
+                },
+              );
+            }
+          },
+        );
+      });
+    });
+  }
+
+  function saveProfile() {
+    var domainInput = qs("#profile-domain");
+    var familySelect = qs("#font_family");
+    var weightSelect = qs("#profile-font-weight");
+    var styleSelect = qs("#profile-font-style");
+    var sizeInput = qs("#profile-font-size");
+
+    var domain = normalizeDomain(domainInput ? domainInput.value : "");
+    var familyName = familySelect ? familySelect.value : "";
+    var selectedOption = familySelect ? familySelect.options[familySelect.selectedIndex] : null;
+    var familyType = selectedOption
+      ? selectedOption.getAttribute("data-type") || "standard"
+      : "standard";
+    var weight = weightSelect ? weightSelect.value : "";
+    var style = styleSelect ? styleSelect.value : "";
+    var sizeRaw = sizeInput ? sizeInput.value.trim() : "";
+    var parsedSize = null;
+
+    if (!domain) {
+      alert("Please enter a valid domain.");
+      return;
+    }
+    if (!familyName) {
+      alert("Please select a font family.");
+      return;
+    }
+    if (sizeRaw) {
+      parsedSize = parseFloat(sizeRaw);
+      if (isNaN(parsedSize)) {
+        alert("Font size must be a number.");
+        return;
+      }
+    }
+
+    var stylePayload = {
+      font_family: {
+        name: familyName,
+        type: familyType,
+      },
+      font_weight: weight || null,
+      font_style: style || null,
+      font_size: parsedSize,
+    };
+
+    if (familyType === "custom") {
+      if (!customFonts[familyName]) {
+        alert("Selected custom font was not found.");
+        return;
+      }
+      stylePayload.font_family.url = customFonts[familyName];
+    }
+
+    profiles[domain] = { domain: domain, style: stylePayload };
+    chrome.storage.local.set({ profiles: profiles }, function () {
+      if (chrome.runtime.lastError) {
+        alert("Unable to save profile. Please try again.");
+        return;
+      }
+      renderProfiles();
+      clearProfileInputs();
+      refreshTabsStyles();
+    });
+  }
+
+  function deleteSelectedProfiles() {
+    var options = qsa("#saved-profiles option");
+    options.forEach(function (option) {
+      if (option.selected) {
+        delete profiles[option.value];
+      }
+    });
+
+    chrome.storage.local.set({ profiles: profiles }, function () {
+      renderProfiles();
+      refreshTabsStyles();
+    });
+  }
+
+  function bindEvents() {
+    var fileInput = qs("#file");
+    var dropZone = qs("#file-drop-zone");
+    var saveFontBtn = qs("#save-font");
+    var deleteFontBtn = qs("#delete-font");
+    var saveProfileBtn = qs("#save-profile");
+    var deleteProfileBtn = qs("#delete-profile");
+
+    if (fileInput) {
+      fileInput.addEventListener("change", function () {
+        updateSelectedFile(this.files && this.files[0] ? this.files[0] : null);
+      });
+    }
+
+    if (dropZone && fileInput) {
+      ["dragenter", "dragover"].forEach(function (eventName) {
+        dropZone.addEventListener(eventName, function (event) {
+          event.preventDefault();
+          event.stopPropagation();
+          dropZone.classList.add("dragover");
         });
       });
+
+      ["dragleave", "dragend"].forEach(function (eventName) {
+        dropZone.addEventListener(eventName, function (event) {
+          event.preventDefault();
+          event.stopPropagation();
+          dropZone.classList.remove("dragover");
+        });
+      });
+
+      dropZone.addEventListener("drop", function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        dropZone.classList.remove("dragover");
+
+        var file = event.dataTransfer && event.dataTransfer.files
+          ? event.dataTransfer.files[0]
+          : null;
+        if (!file) return;
+
+        try {
+          var dt = new DataTransfer();
+          dt.items.add(file);
+          fileInput.files = dt.files;
+        } catch (e) {}
+
+        updateSelectedFile(file);
+      });
+    }
+
+    if (saveFontBtn) {
+      saveFontBtn.addEventListener("click", saveSelectedFont);
+    }
+
+    if (deleteFontBtn) {
+      deleteFontBtn.addEventListener("click", deleteSelectedFonts);
+    }
+
+    if (saveProfileBtn) {
+      saveProfileBtn.addEventListener("click", saveProfile);
+    }
+
+    if (deleteProfileBtn) {
+      deleteProfileBtn.addEventListener("click", deleteSelectedProfiles);
+    }
   }
-  function t(a) {
-    return Array.prototype.slice.call(document.querySelectorAll(a));
-  }
-  var e = {},
-    f = null,
-    g = null,
-    h = document.querySelector.bind(document),
-    p = {},
-    q = null,
-    s = null,
-    previewLoadedFamilies = {},
-    previewQueue = [],
-    previewTimer = null;
-  (chrome.storage.local.get(["custom_fonts", "profiles"]).then(function (a) {
-    ((e = (a && a.custom_fonts) || {}),
-      (p = (a && a.profiles) || {}),
-      c(),
-      l(),
-      m());
-  }),
-    document.addEventListener("DOMContentLoaded", function () {
-      a();
-    }));
+
+  chrome.storage.local.get(["custom_fonts", "profiles"], function (data) {
+    customFonts = (data && data.custom_fonts) || {};
+    profiles = (data && data.profiles) || {};
+    renderSavedFonts();
+    renderFontFamilySelect();
+    renderProfiles();
+  });
+
+  document.addEventListener("DOMContentLoaded", function () {
+    bindEvents();
+    initProfileStyleWeightSelects();
+  });
 })();
