@@ -69,7 +69,9 @@ function t(a) {
   ) {
     if (a.styles.domain_styles[document.location.host].type === "global") {
       if (a.styles.global_style) return a.styles.global_style;
-    } else if (a.styles.domain_styles[document.location.host].type === "custom") {
+    } else if (
+      a.styles.domain_styles[document.location.host].type === "custom"
+    ) {
       return a.styles.domain_styles[document.location.host];
     }
   } else if (a && a.styles && a.styles.global_style) {

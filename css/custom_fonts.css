@@ -13,6 +13,9 @@
   --fc-accent-soft: rgba(55, 65, 81, 0.2);
   --fc-accent-hover: #1f2937;
   --fc-accent-active: #111827;
+  --fc-danger: #dc2626;
+  --fc-danger-hover: #b91c1c;
+  --fc-danger-active: #991b1b;
 }
 
 html,
@@ -378,24 +381,25 @@ button:active {
 #reset-fonts,
 #reset-profiles,
 #reset-all-settings {
-  border-color: #b91c1c;
-  background: #dc2626;
+  border-color: var(--fc-danger-hover);
+  background: var(--fc-danger);
 }
 
 #reset-global:hover,
 #reset-fonts:hover,
 #reset-profiles:hover,
 #reset-all-settings:hover {
-  background: #b91c1c;
+  background: var(--fc-danger-hover);
 }
 
 #reset-global:active,
 #reset-fonts:active,
 #reset-profiles:active,
 #reset-all-settings:active {
-  background: #991b1b;
+  background: var(--fc-danger-active);
 }
 
 .reset-all-wrap {
-  justify-content: flex-end;
+  display: flex;
+  justify-content: center;
 }
