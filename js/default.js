@@ -21999,6 +21999,55 @@ var googlefonts = {
       });
     });
     var y = {},
+      fontPreviewLoadedFamilies = {},
+      fontPreviewQueue = [],
+      fontPreviewTimer = null,
+      flushGooglePreviewQueue = function () {
+        var a = fontPreviewQueue.splice(0, 12);
+        if (!a.length) {
+          fontPreviewTimer = null;
+          return;
+        }
+        var b = document.createElement("link");
+        ((b.rel = "stylesheet"),
+          (b.type = "text/css"),
+          (b.href =
+            "https://fonts.googleapis.com/css?family=" +
+            a.map(function (a) {
+              return a.replace(/\s/g, "+");
+            }).join("|") +
+            "&display=swap"),
+          document.head
+            ? document.head.appendChild(b)
+            : document.documentElement.appendChild(b));
+        if (fontPreviewQueue.length) {
+          fontPreviewTimer = setTimeout(flushGooglePreviewQueue, 80);
+        } else {
+          fontPreviewTimer = null;
+        }
+      },
+      enqueueGooglePreviewFont = function (a) {
+        if (!a || fontPreviewLoadedFamilies[a]) {
+          return;
+        }
+        fontPreviewLoadedFamilies[a] = !0;
+        fontPreviewQueue.push(a);
+        if (fontPreviewTimer) {
+          return;
+        }
+        fontPreviewTimer = setTimeout(flushGooglePreviewQueue, 80);
+      },
+      buildPreviewMarkup = function (a) {
+        if (!a) return "";
+        var b = a.text || "",
+          c = a.element ? $(a.element) : $(),
+          d = c.length ? c.data("type") : null,
+          e = b.replace(/'/g, "\\'");
+        if ("google" === d) {
+          enqueueGooglePreviewFont(b);
+        }
+        return "<span style=\"font-family:'" + e + "',sans-serif;\">" + b + "</span>";
+      },
       al = function (b) {
         var c = r.concat(b || []);
         if (a.data("select2")) {
@@ -22039,6 +22088,11 @@ var googlefonts = {
         });
         a.select2({
           placeholder: "Select a Font",
+          escapeMarkup: function (a) {
+            return a;
+          },
+          formatResult: buildPreviewMarkup,
+          formatSelection: buildPreviewMarkup,
         });
       };
     chrome.storage.local.get(["custom_fonts", "google_fonts_api_key"], function (b) {
