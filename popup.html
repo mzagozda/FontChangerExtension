@@ -1,109 +1,80 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title></title>
-    <link href="css/bootstrap.min.css" rel="stylesheet" type="text/css">
     <link href="select2/select2.css" rel="stylesheet" type="text/css">
-    <style type="text/css">
-        body {
-            padding: 10px;
-            width: 275px;
-            box-sizing: border-box;
-            height: 550px;
-        }
-        td {
-            padding: 3px;
-        }
-        input.inline-text {
-            margin-bottom: 0px;
-        }
-
-        h3 {
-            line-height: normal;
-        }
-        .tdcheckbox {
-            padding-right: 5px;
-        }
-
-        body input, body select {
-            margin: 0px;
-        }
-        body select {
-            width: 189px;
-        }
-        .well {
-            margin-top: 10px;
-            margin-bottom: 0px;
-        }
-        .setting-name {
-            font-size: 22px;
-            font-weight: bold;
-            color: grey;
-            margin-bottom: 20px;;
-        }
-
-        .done-cont {
-            margin-top: 10px;
-            text-align: center;
-        }
-
-    </style>
+    <link href="css/popup.css" rel="stylesheet" type="text/css">
 </head>
+
 <body>
-    <h3 class="domain">Change Style</h3>
-    <div>
-        Use <select class="setting-type"><option value="global">Global Font</option><option value="custom">Site Specific Font</option><option value="none">No Font</option></select>
-    </div>
-    <div class="well">
-        <div class="setting-name">Global Settings</div>
-        <div class="control-group">
-            <label>Font Name <a class="help-tip" rel="tooltip" title="Click to view Google Fonts" href="http://www.google.com/webfonts" target="_blank"><i class="icon-question-sign"></i></a></label>
-            <table><tr><td class="tdcheckbox"><input type="checkbox" class="enable-select" id="font_family_chk"></td><td><select style="width: 189px;" id="font_family" class="inline-text" disabled="disabled"></select></td></tr></table>
-            <div>
-                <a id="custom-font" style="cursor: pointer;">Edit Custom Fonts</a>
+    <div class="popup-shell">
+        <h3 class="domain">Change Style</h3>
+        <div class="mode-row global-edit-row">
+            <label for="edit_global_chk">Edit Global Settings</label>
+            <input type="checkbox" id="edit_global_chk">
+        </div>
+        <div class="well">
+            <div class="master-toggle-row">
+                <label for="master_enable_chk">Enable Font Override</label>
+                <input type="checkbox" id="master_enable_chk" checked="checked">
+            </div>
+            <div class="setting-name" aria-hidden="true"></div>
+            <div class="control-group">
+                <label>Font Name <a class="help-tip" rel="tooltip" title="Click to view Google Fonts"
+                        href="https://fonts.google.com/" target="_blank">?</a></label>
+                <div class="control-row">
+                    <div class="tdcheckbox"><input type="checkbox" class="enable-select" id="font_family_chk"></div>
+                    <div><select style="width: 189px;" id="font_family" class="inline-text"
+                            disabled="disabled"></select></div>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Font Weight</label>
+                <div class="control-row">
+                    <div>
+                        <select id="font_weight" class="inline-text">
+                            <option value="normal" selected style="font-weight: normal;">Normal</option>
+                            <option value="lighter" style="font-weight: lighter;">Lighter</option>
+                            <option value="bolder" style="font-weight: bolder;">Bolder</option>
+                            <option value="bold" style="font-weight: bold;">Bold</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="control-group">
+                <label>Font Size</label>
+                <div class="control-row">
+                    <div class="tdcheckbox"><input type="checkbox" class="enable-text" id="font_size_chk"
+                            data-target="#font_size"></div>
+                    <div class="input-with-unit"><input type="text" id="font_size" class="input-medium inline-text"
+                            disabled="disabled"><span>px</span></div>
+                </div>
+            </div>
+            <div class="control-group">
+                <label>Font Style</label>
+                <div class="control-row">
+                    <div>
+                        <select id="font_style" class="inline-text">
+                            <option value="normal" selected style="font-style: normal;">Normal</option>
+                            <option value="italic" style="font-style: italic;">Italic</option>
+                            <option value="oblique" style="font-style: oblique;">Oblique</option>
+                        </select>
+                    </div>
+                </div>
             </div>
         </div>
-
-        <div class="control-group">
-            <label>Font Weight</label>
-            <table>
-                <tr>
-                    <td class="tdcheckbox"><input type="checkbox" id="font_weight_chk"></td>
-                    <td>
-                        <select id="font_weight" class="inline-text" disabled="disabled">
-                            <option value="normal">Normal</option>
-                            <option value="bold">Bold</option>
-                            <option value="bolder">Bolder</option>
-                            <option value="lighter">Lighter</option>
-                        </select>
-                    </td>
-                </tr>
-            </table>
-        </div>
-        <div class="control-group">
-            <label>Font Size</label>
-            <table><tr><td class="tdcheckbox"><input type="checkbox" class="enable-text" id="font_size_chk"></td><td><input type="text" id="font_size" class="input-medium inline-text" disabled="disabled"> px</td></tr></table>
-        </div>
-        <div class="control-group">
-            <label>Font Style</label>
-            <table>
-                <tr>
-                    <td class="tdcheckbox"><input type="checkbox" id="font_style_chk"></td>
-                    <td>
-                        <select id="font_style" class="inline-text" disabled="disabled">
-                            <option value="normal">Normal</option>
-                            <option value="italic">Italic</option>
-                            <option value="oblique">Oblique</option>
-                        </select>
-                    </td>
-                </tr>
-            </table>
+        <div class="done-cont">
+            <button id="open-settings" type="button">Settings</button>
+            <button id="save-profile-popup" type="button">Save</button>
+            <button class="done" type="button">Done</button>
         </div>
     </div>
-    <div class="done-cont"><button class="btn btn-primary done" type="button">Done</button></div>
 
 
 
-<script type="text/javascript" src="js/default.js"></script>
+    <script type="text/javascript" src="js/default.js"></script>
 </body>
+
 </html>

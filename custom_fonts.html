@@ -1,43 +1,136 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title></title>
-    <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
+    <link href="select2/select2.css" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" type="text/css" href="css/custom_fonts.css">
 </head>
+
 <body>
-<div class="container">
-    <h3>Save New Font</h3>
-    <div class="form-horizontal well">
-        <div class="lead">Select a font file and it will automatically show up in the font list.</div>
-        <div class="control-group">
-            <label class="control-label" for="font-name">Font Name</label>
-            <div class="controls">
+    <main class="page-wrap">
+        <h1>Global Settings</h1>
+        <section class="panel">
+            <div class="profile-grid">
+                <div class="field">
+                    <label for="global-font-family">Font Family</label>
+                    <select id="global-font-family" class="inline-text"></select>
+                </div>
+                <div class="field">
+                    <label for="global-font-weight">Font Weight</label>
+                    <select id="global-font-weight">
+                        <option value="normal">Normal</option>
+                        <option value="lighter">Lighter</option>
+                        <option value="bolder">Bolder</option>
+                        <option value="bold">Bold</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="global-font-style">Font Style</label>
+                    <select id="global-font-style">
+                        <option value="normal">Normal</option>
+                        <option value="italic">Italic</option>
+                        <option value="oblique">Oblique</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="global-font-size">Font Size (px)</label>
+                    <input type="text" id="global-font-size" placeholder="16">
+                </div>
+            </div>
+            <div class="actions">
+                <button id="save-global">Save Global Settings</button>
+                <button id="reset-global">Reset Global</button>
+            </div>
+        </section>
+
+        <h2>Save New Font</h2>
+        <section class="panel">
+            <p class="lead">Select a font file and it will automatically show up in the font list.</p>
+            <div class="field">
+                <label for="font-name">Font Name</label>
                 <input type="text" id="font-name" placeholder="Font Name">
             </div>
-        </div>
-        <div class="control-group">
-            <label class="control-label" for="file">Select Font (.ttf, .otf, .woff)</label>
-            <div class="controls">
-                <input type="file" id="file">
+            <div class="field">
+                <label for="file">Select Font (.ttf, .otf, .woff)</label>
+                <div id="file-drop-zone" class="drop-zone">
+                    <input type="file" id="file" accept=".ttf,.otf,.woff">
+                    <div class="drop-zone-text">Drop font file here or <span>browse</span></div>
+                    <div id="file-name" class="file-name">No file selected</div>
+                </div>
             </div>
-        </div>
-        <div class="control-group">
-            <div class="controls">
-                <button class="btn btn-primary" id="save-font">Save Font</button>
+            <div class="actions">
+                <button id="save-font">Save Font</button>
             </div>
-        </div>
-    </div>
-    <h3>Saved Fonts</h3>
-    <div class="form-horizontal">
-        <div class="control-group">
-            <div class="controls">
-                <select id="saved-fonts" multiple="multiple" style="height: 200px;"></select>
-                <button class="btn btn-danger" id="delete-font" style="vertical-align: top;">Delete</button>
+        </section>
+        <h2>Saved Fonts</h2>
+        <section class="panel">
+            <div class="saved-row">
+                <select id="saved-fonts" multiple="multiple"></select>
+                <button id="delete-font">Delete</button>
             </div>
-        </div>
-    </div>
-</div>
+            <div class="actions" style="margin-top: 10px;">
+                <button id="reset-fonts">Reset Fonts</button>
+            </div>
+        </section>
 
+        <h2>Smart Profiles</h2>
+        <section class="panel">
+            <p class="lead">Create domain-based font profiles that override regular settings automatically.</p>
+            <div class="field">
+                <label for="profile-domain">Domain</label>
+                <input type="text" id="profile-domain" placeholder="example.com">
+            </div>
+            <div class="profile-grid">
+                <div class="field">
+                    <label for="profile-font-family">Font Family</label>
+                    <select id="font_family" class="inline-text"></select>
+                </div>
+                <div class="field">
+                    <label for="profile-font-weight">Font Weight</label>
+                    <select id="profile-font-weight">
+                        <option value="normal">Normal</option>
+                        <option value="lighter">Lighter</option>
+                        <option value="bolder">Bolder</option>
+                        <option value="bold">Bold</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="profile-font-style">Font Style</label>
+                    <select id="profile-font-style">
+                        <option value="normal">Normal</option>
+                        <option value="italic">Italic</option>
+                        <option value="oblique">Oblique</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="profile-font-size">Font Size (px)</label>
+                    <input type="text" id="profile-font-size" placeholder="16">
+                </div>
+            </div>
+            <div class="actions">
+                <button id="save-profile">Save Profile</button>
+            </div>
+        </section>
+
+        <h2>Saved Profiles</h2>
+        <section class="panel">
+            <div class="saved-row">
+                <select id="saved-profiles" multiple="multiple"></select>
+                <button id="delete-profile">Delete Profile</button>
+            </div>
+            <div class="actions" style="margin-top: 10px;">
+                <button id="reset-profiles">Reset Profiles</button>
+            </div>
+        </section>
+
+        <div class="actions reset-all-wrap" style="margin-top: 14px;">
+            <button id="reset-all-settings">Reset All Settings</button>
+        </div>
+    </main>
+
+    <script src="js/default.js"></script>
     <script src="js/custom_fonts.js"></script>
 </body>
+
 </html>

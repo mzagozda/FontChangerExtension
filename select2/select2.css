@@ -6,7 +6,7 @@ Version: 3.2 Timestamp: Mon Sep 10 10:38:04 PDT 2012
     display: inline-block;
     /* inline-block for ie7 */
     zoom: 1;
-    *display: inline;
+    display: inline;
     vertical-align: top;
 }
 

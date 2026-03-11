@@ -20,6 +20,15 @@ You can also add your own custom font.
 - Add custom fonts
 - Change the font globally, or set it site specific
 
+## Chrome Web Store release
+
+1. Bump `version` in `manifest.json` (every new upload must have a higher version).
+2. Create a ZIP package with the extension files and folders, with `manifest.json` at the root of the archive (no extra top-level wrapper folder).
+3. Open the [Chrome Web Store Developer Dashboard](https://chrome.google.com/webstore/devconsole).
+4. Open your extension and upload the new ZIP package.
+5. Fill in "What's new", review permissions/data use details, and submit for review.
+6. After approval, the update is rolled out automatically to users.
+
 ## Contributing
 
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
